@@ -1,0 +1,53 @@
+{
+  "source_db": "D:\\Projects\\vinyl-critics-vs-streams\\data\\raw\\pitchfork\\database.sqlite",
+  "source_db_mtime": "2025-11-04T15:40:22.626372+00:00",
+  "exported_at": "2025-11-05T16:48:36.026910+00:00",
+  "tables": {
+    "artists": {
+      "csv_path": "D:\\Projects\\vinyl-critics-vs-streams\\data\\interim\\pitchfork_artists.csv",
+      "rows": 18831,
+      "bytes": 366097,
+      "sha256": "4f1f01da7c5bf033977b2382c4530348e8bc2c75b49919c40ee9b9629bd3f208"
+    },
+    "reviews": {
+      "csv_path": "D:\\Projects\\vinyl-critics-vs-streams\\data\\interim\\pitchfork_reviews.csv",
+      "rows": 18393,
+      "bytes": 2830505,
+      "sha256": "57a2b1f310a57bba28c742259f3f7e0a97698f41a3fed1605feaaf4eb66da881"
+    },
+    "genres": {
+      "csv_path": "D:\\Projects\\vinyl-critics-vs-streams\\data\\interim\\pitchfork_genres.csv",
+      "rows": 22680,
+      "bytes": 300689,
+      "sha256": "e2d56ab3498e7658e3556d80423470bcf8b1fcf60ede3a55c40cb0ac68e46a8c"
+    },
+    "labels": {
+      "csv_path": "D:\\Projects\\vinyl-critics-vs-streams\\data\\interim\\pitchfork_labels.csv",
+      "rows": 20190,
+      "bytes": 341256,
+      "sha256": "ca73a47ef9c132909237beb6718ef51d0befb31e97f19d3dfbc394e108bad4af"
+    },
+    "years": {
+      "csv_path": "D:\\Projects\\vinyl-critics-vs-streams\\data\\interim\\pitchfork_years.csv",
+      "rows": 19108,
+      "bytes": 257596,
+      "sha256": "40dce8d17980266d90562b9e3839e428f3a3c3c1faa2bfb41bb398b4fbe3c1cf"
+    },
+    "content": {
+      "csv_path": "D:\\Projects\\vinyl-critics-vs-streams\\data\\interim\\pitchfork_content.csv",
+      "rows": 18393,
+      "bytes": 75497139,
+      "sha256": "8e9fa91f5a7444dcfb3d29363d616978312b8527058b96c8f1ea2cc2ebe8adf2"
+    }
+  },
+  "missing_tables": [],
+  "totals": {
+    "tables_exported": 6,
+    "rows_exported": 117595,
+    "bytes_exported": 79593282
+  },
+  "notes": [
+    "sha256 is of the CSV at export time; commit this manifest to detect drift.",
+    "missing_tables indicates expected-but-absent tables in the SQLite dump."
+  ]
+}

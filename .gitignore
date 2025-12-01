@@ -1,0 +1,28 @@
+# Ignore SQLite artifacts
+*.db-shm
+*.db-wal
+
+# Ignore full raw datasets
+data/raw/
+
+# Ignore heavy processed DBs
+data/processed/vinyl_dw.sqlite
+data/processed/vinyl_dw.sqlite-shm
+data/processed/vinyl_dw.sqlite-wal
+data/processed/*.sqlite
+data/processed/*.db
+
+# Keep only this small sample CSV (if present)
+!data/processed/artist_critics_vs_streams_sample.csv
+
+# Ignore Python bytecode
+__pycache__/
+*.pyc
+
+# Ignore virtual environments
+venv/
+.env/
+
+# Ignore system files
+.DS_Store
+Thumbs.db
