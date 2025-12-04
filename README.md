@@ -1,3 +1,26 @@
+<p align="left">
+
+<!-- Python version -->
+<a href="https://www.python.org/">
+  <img src="https://img.shields.io/badge/Python-3.10+-blue.svg" alt="Python 3.10+">
+</a>
+
+<!-- License -->
+<a href="LICENSE">
+  <img src="https://img.shields.io/badge/License-MIT-green.svg" alt="MIT License">
+</a>
+
+<!-- Repo size -->
+<img src="https://img.shields.io/github/repo-size/mmashaire/vinyl-critics-vs-streams" alt="Repo Size">
+
+<!-- Last commit -->
+<img src="https://img.shields.io/github/last-commit/mmashaire/vinyl-critics-vs-streams" alt="Last Commit">
+
+<!-- Stars (will motivate ppl to star it) -->
+<img src="https://img.shields.io/github/stars/mmashaire/vinyl-critics-vs-streams?style=social" alt="GitHub stars">
+
+</p>
+
 # Vinyl Critics vs Streams
 
 This project compares Pitchfork critic scores with Spotify and YouTube streaming performance.  
@@ -127,4 +150,5 @@ The repository demonstrates an end-to-end workflow that is typical in data engin
 - performing exploratory analytics and visualisation  
 
 It is designed as a compact, realistic example of how a full analytics workflow is built and communicated.
+
 
