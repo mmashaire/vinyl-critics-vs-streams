@@ -69,6 +69,66 @@ These views act as the main entry points for notebooks, dashboards, or external 
 
 ---
 
+## Architecture
+
+```mermaid
+flowchart LR
+    subgraph RAW[Raw data (data/raw)]
+        PF[Pitchfork database.sqlite]
+        SY[Spotify_Youtube.csv]
+        SA[spotify_attributes/data.csv]
+        TS[universal_top_spotify_songs.csv]
+    end
+
+    subgraph SCRIPTS[Python ETL scripts (scripts/)]
+        EP[extract_pitchfork.py]
+        SR[stage_reviews.py]
+        MR[make_review_artists_bridge.py]
+        CS[clean_spotify_youtube.py]
+        MA[match_artists.py]
+        LDA[load_dim_artist.py]
+        LRB[load_reviews_and_bridge.py]
+    end
+
+    subgraph STAGING[Staging & overrides (data/interim, data/overrides)]
+        PRC[pitchfork_reviews_typed.csv]
+        PRA[pitchfork_review_artists.csv]
+        SYC[spotify_youtube_clean.csv]
+        AM[artist_map.csv]
+        ARQ[artist_review_queue.csv]
+    end
+
+    subgraph WAREHOUSE[SQLite warehouse (data/processed/vinyl_dw.sqlite)]
+        PRT[pitchfork_reviews]
+        PRA_T[pitchfork_review_artists]
+        DA[dim_artist]
+        SY_T[spotify_youtube_clean]
+    end
+
+    subgraph VIEWS[SQL views (sql/dw/create_views.sql)]
+        RVA[vw_review_with_artist]
+        UMA[vw_unmatched_artists]
+        ASM[vw_artist_summary]
+        AST[vw_artist_streams]
+        CVS[vw_artist_critics_vs_streams]
+    end
+
+    subgraph ANALYSIS[Analysis & outputs]
+        NB[01_critics_vs_streams.ipynb]
+        PLOT[critic_vs_streams_labeled.png]
+        README[README.md]
+    end
+
+    RAW --> SCRIPTS
+    SCRIPTS --> STAGING
+    STAGING --> WAREHOUSE
+    WAREHOUSE --> VIEWS
+    VIEWS --> NB
+    NB --> PLOT
+    NB --> README
+
+---
+
 ## Analytical Notebook
 
 The main analysis is in `notebooks/01_critics_vs_streams.ipynb`.
@@ -150,5 +210,6 @@ The repository demonstrates an end-to-end workflow that is typical in data engin
 - performing exploratory analytics and visualisation  
 
 It is designed as a compact, realistic example of how a full analytics workflow is built and communicated.
+
 
 
