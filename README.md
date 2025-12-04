@@ -16,7 +16,7 @@
 <!-- Last commit -->
 <img src="https://img.shields.io/github/last-commit/mmashaire/vinyl-critics-vs-streams" alt="Last Commit">
 
-<!-- Stars (will motivate ppl to star it) -->
+<!-- Stars -->
 <img src="https://img.shields.io/github/stars/mmashaire/vinyl-critics-vs-streams?style=social" alt="GitHub stars">
 
 </p>
@@ -42,23 +42,29 @@ The aim is to build a clean, reproducible workflow from raw data to analysis and
 
 ## Data Pipeline Overview
 
-### Raw Data  
+### Raw Data
+
 Located under `data/raw/`:
+
 - Pitchfork SQLite dump (reviews, artists, genres, labels)  
 - Spotify and YouTube track-level metrics  
 
-### Staging & Cleaning  
+### Staging & Cleaning
+
 Scripts in `scripts/` perform:
+
 - Parsing and typing of Pitchfork review fields  
 - Splitting multi-artist reviews into a bridge table  
 - Fuzzy artist matching using `rapidfuzz`  
 - Building intermediate CSVs for validation and loading  
 
-### Data Warehouse  
+### Data Warehouse
+
 The warehouse lives at `data/processed/vinyl_dw.sqlite`.  
 SQL in `sql/dw/` defines the semantic layer.
 
 Key views:
+
 - `vw_review_with_artist`  
 - `vw_unmatched_artists`  
 - `vw_artist_summary`  
@@ -68,7 +74,7 @@ Key views:
 These views act as the main entry points for notebooks, dashboards, or external queries.
 
 ---
-```markdown
+
 ## Architecture
 
 ```mermaid
@@ -126,6 +132,7 @@ flowchart LR
     VIEWS --> NB
     NB --> PLOT
     NB --> README
+```
 
 ---
 
@@ -134,6 +141,7 @@ flowchart LR
 The main analysis is in `notebooks/01_critics_vs_streams.ipynb`.
 
 It covers:
+
 - Loading the warehouse via SQLite + pandas  
 - Schema, range, and missing-value checks  
 - Log-scaling of skewed streaming metrics  
@@ -166,15 +174,15 @@ A small number of outliers are labelled to highlight interesting deviations.
 ### Example Outliers (labelled in the plot)
 
 | Artist                | Avg Score | Log10 Streams | Reviews | Tracks |
-|----------------------|-----------|----------------|---------|--------|
-| Post Malone           | 4.85      | 10.18          | 2       | 10     |
-| Coldplay              | 5.72      | 10.07          | 10      | 10     |
-| Sia                   | 5.85      | 9.87           | 4       | 10     |
-| Red Hot Chili Peppers | 5.60     | 9.83           | 5       | 10     |
-| Green Day             | 5.72      | 9.66           | 5       | 10     |
-| John Coltrane         | 9.50      | 8.61           | 3       | 10     |
-| Ennio Morricone       | 8.57      | 8.42           | 3       | 10     |
-| Caetano Veloso        | 8.84      | 8.31           | 5       | 10     |
+|-----------------------|-----------|---------------|---------|--------|
+| Post Malone           | 4.85      | 10.18         | 2       | 10     |
+| Coldplay              | 5.72      | 10.07         | 10      | 10     |
+| Sia                   | 5.85      | 9.87          | 4       | 10     |
+| Red Hot Chili Peppers | 5.60      | 9.83          | 5       | 10     |
+| Green Day             | 5.72      | 9.66          | 5       | 10     |
+| John Coltrane         | 9.50      | 8.61          | 3       | 10     |
+| Ennio Morricone       | 8.57      | 8.42          | 3       | 10     |
+| Caetano Veloso        | 8.84      | 8.31          | 5       | 10     |
 
 ---
 
@@ -210,7 +218,3 @@ The repository demonstrates an end-to-end workflow that is typical in data engin
 - performing exploratory analytics and visualisation  
 
 It is designed as a compact, realistic example of how a full analytics workflow is built and communicated.
-
-
-
-
