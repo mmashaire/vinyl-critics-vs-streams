@@ -68,7 +68,7 @@ Key views:
 These views act as the main entry points for notebooks, dashboards, or external queries.
 
 ---
-
+```markdown
 ## Architecture
 
 ```mermaid
@@ -210,6 +210,7 @@ The repository demonstrates an end-to-end workflow that is typical in data engin
 - performing exploratory analytics and visualisation  
 
 It is designed as a compact, realistic example of how a full analytics workflow is built and communicated.
+
 
 
 
