@@ -1,8 +1,17 @@
-import sqlite3, pandas as pd, glob, os
+import glob
+import os
+import sqlite3
 from pathlib import Path
 
-DB = Path(r"D:\Projects\vinyl-critics-vs-streams\data\processed\vinyl_dw.sqlite")
-IN_DIR = Path(r"D:\Projects\vinyl-critics-vs-streams\data\interim")
+import pandas as pd
+
+
+def repo_root() -> Path:
+    return Path(__file__).resolve().parent.parent
+
+
+DB = repo_root() / "data" / "processed" / "vinyl_dw.sqlite"
+IN_DIR = repo_root() / "data" / "interim"
 
 DB.parent.mkdir(parents=True, exist_ok=True)
 con = sqlite3.connect(DB)
