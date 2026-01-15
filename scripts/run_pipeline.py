@@ -33,6 +33,7 @@ PIPELINE: List[Tuple[str, str]] = [
     ("load_reviews_and_bridge", "load_reviews_and_bridge.py"),
     ("load_dim_artist", "load_dim_artist.py"),
     ("stage_to_sqlite", "stage_to_sqlite.py"),
+    ("validate_dw", "validate_dw.py"),
 ]
 
 OPTIONAL_STEPS: List[Tuple[str, str]] = [
