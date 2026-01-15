@@ -160,6 +160,20 @@ A small number of outliers are labelled to highlight interesting deviations.
 
 ![Critics vs Streams](assets/critic_vs_streams_labeled.png)
 
+---
+
+## Power BI Dashboard
+
+A Power BI dashboard version of the analysis is included for interactive exploration (filters for artist, review count, and first review year).
+
+> The image below is a static preview. The interactive `.pbix` report file is included in the repository.
+
+![Power BI Dashboard Overview](assets/powerbi_dashboard_overview.png)
+
+### Files
+- `reports/vinyl_critics_vs_streams_dashboard.pbix` — interactive Power BI report
+- `assets/powerbi_dashboard_overview.png` — dashboard preview image
+
 ### Interpretation
 
 - The overall correlation between critic favourability and streaming scale is weak.  
