@@ -7,224 +7,150 @@
   </a>
   <img src="https://img.shields.io/github/repo-size/mmashaire/vinyl-critics-vs-streams" alt="Repo Size">
   <img src="https://img.shields.io/github/last-commit/mmashaire/vinyl-critics-vs-streams" alt="Last Commit">
-  <img src="https://img.shields.io/github/stars/mmashaire/vinyl-critics-vs-streams?style=social" alt="GitHub stars">
 </p>
 
 # 🎵 Vinyl Critics vs Streams
 
-An end-to-end **data engineering & ML project** that answers:
+**An end-to-end data engineering & ML project** that investigates whether critics and listeners like the same music.
 
-> **Do critics and listeners like the same music? And can streaming popularity be predicted from critical acclaim?**
+## The Question
 
-This repo contains:
-- **Complete ETL pipeline** (14 orchestrated scripts, deterministic CI-ready)
-- **SQLite warehouse** with validated schema and semantic SQL views
-- **Exploratory analysis notebook** with correlation & outlier detection
-- **Baseline ML models** (Linear Regression & Random Forest)
-- **Power BI dashboard** for interactive exploration
-- **Comprehensive test suite** with data quality validation
-- **Production-grade practices**: schema validation, deterministic execution, proper error handling
+Do Pitchfork critics and Spotify listeners agree? Can we predict streaming success from critical acclaim? **Spoiler: not really.**
 
-Real data. Real engineering. Realistic scope.
-
-## The Data Architecture
-
-### Three Sources, Three Cleaning Paths
-
-**Pitchfork** → Extract from SQLite dump → Parse review metadata (date, score, artist names) → Type-safe intermediate CSV  
-**Spotify** → Download track-level CSV → Validate audio features → Clean and standardize  
-**YouTube** → Raw engagement data → Aggregate by artist → Join with Spotify
-
-### The ETL Pipeline (14 Ordered Steps)
-
-All orchestrated via `scripts/run_pipeline.py`. Deterministic. Stops on first failure.
-
-| Step | Script | Purpose |
-|------|--------|---------|
-| 1 | `extract_pitchfork.py` | Load Pitchfork SQLite dump, parse reviews |
-| 2 | `inspect_pitchfork.py` | Data quality audit (null counts, score distribution, etc.) |
-| 3 | `stage_reviews.py` | Clean and type-check review metadata, output intermediate CSV |
-| 4 | `make_review_artists_bridge.py` | Split multi-artist reviews into bridge table |
-| 5 | `build_artist_universe.py` | Canonical artist list from all three sources |
-| 6 | `clean_spotify_youtube.py` | Validate audio features, aggregate engagement metrics |
-| 7 | `match_artists.py` | **Fuzzy matching** via `rapidfuzz` across sources |
-| 8 | `load_reviews_and_bridge.py` | Load staged reviews and bridge into warehouse |
-| 9 | `load_dim_artist.py` | Load matched artist dimension with Spotify IDs |
-| 10 | `stage_to_sqlite.py` | Load streaming metrics fact table |
-| 11 | `validate_dw.py` | **Constraint validation** (uniqueness, referential integrity, null handling) |
-| 12 | `match_artists_offline.py` | *Optional: manual overrides for problematic matches* |
-| 13 | `verify_manifest.py` | *Optional: compare row counts before/after* |
-
-**Key Design Decision:** Each script is **independent**, reads from CSVs, validates input/output, and can be re-run safely.
-
-### Warehouse Schema
-
-**Database:** `data/processed/vinyl_dw.sqlite`
-
-```
-┌─────────────────────────────────────┐
-│  pitchfork_reviews                  │
-│  ├─ reviewid (PK)                   │
-│  ├─ artist, title, score            │
-│  ├─ pub_year, pub_month             │
-│  └─ source_filename                 │
-└────────────────┬────────────────────┘
-                 │ 1:N
-                 │
-    ┌────────────▼────────────────┐
-    │  pitchfork_review_artists   │
-    │  ├─ id (PK)                 │
-    │  ├─ reviewid (FK)           │
-    │  └─ artist (normalized)     │
-    └────────────┬────────────────┘
-                 │ N:1
-                 │
-    ┌────────────▼────────────────┐
-    │  dim_artist                 │
-    │  ├─ artist (PK)             │
-    │  ├─ artist_spotify (unique) │
-    │  ├─ match_type              │
-    │  └─ match_conf              │
-    └─────────────────────────────┘
-                 │
-                 │ references
-                 │
-    ┌────────────▼──────────────────────┐
-    │  spotify_youtube_clean            │
-    │  ├─ artist_spotify (FK)           │
-    │  ├─ total_streams                 │
-    │  ├─ avg_danceability              │
-    │  ├─ total_yt_views                │
-    │  └─ [audio features + metrics]    │
-    └───────────────────────────────────┘
-```
-
-### Semantic Layer (SQL Views)
-
-**File:** `sql/dw/create_views.sql` (6 production views)
-
-- `vw_review_with_artist` — Reviews with matched Spotify artist IDs
-- `vw_unmatched_artists` — Data quality check: artists without Spotify match (backlog)
-- `vw_artist_summary` — Aggregated: review count, avg/min/max score per artist
-- `vw_artist_streams` — Aggregated: total streams, track count per artist
-- `vw_artist_critics_vs_streams` — **The core analysis table** (artist-level, 17+ columns)
-
-All views are **safe to re-run** (DROP IF EXISTS).
+This repo demonstrates production-grade data work:
+- Extract & clean data from 3 heterogeneous sources
+- Resolve artist identity across Pitchfork, Spotify, and YouTube
+- Build a validated SQLite warehouse
+- Explore correlations and outliers  
+- Train baseline ML models
+- Deliver interactive dashboards
 
 ---
 
-## Validation & Testing
+## What's Inside
 
-**Before analysis, the warehouse is tested.** No garbage in, no garbage out.
+### 📊 Data Sources
 
-### Warehouse Validation (`scripts/validate_dw.py`)
+| Source | Size | Format | Key Fields |
+|--------|------|--------|-----------|
+| **Pitchfork** | ~18K reviews | SQLite dump | review_id, artist, score, year, month |
+| **Spotify** | ~48K tracks | CSV | artist, track, streams, audio features |
+| **YouTube** | Track engagement | CSV | views, likes, comments |
 
-Runs automatically as the final ETL step:
+### 🔄 The ETL Pipeline
 
-✅ **Table existence** — All required tables present  
-✅ **Non-empty checks** — Tables have rows (not just schema)  
-✅ **Uniqueness constraints** — Primary keys are unique, no duplicates  
-✅ **Referential integrity** — Foreign keys point to actual rows  
-✅ **Null handling** — Critical columns (artist, score) are non-null  
-✅ **Orphan detection** — Bridge table rows reference valid parent records  
+**Entry point:** `scripts/run_pipeline.py`
 
-### Unit Tests (`tests/`)
-
-```bash
-pytest tests/test_dw_smoke.py -v
-```
-
-Checks:
-- Warehouse file exists and is readable
-- Required tables/views exist
-- View queries don't error
-- Basic row counts are sensible
-
-### CI/CD Integration
-
-Pipeline runs deterministically via GitHub Actions. Fails fast, stops on error, clear output.
-
----
-
-## Exploratory Analysis & ML Modeling
-
-### Notebook Analysis (`notebooks/01_critics_vs_streams.ipynb`)
-
-Reads from `vw_artist_critics_vs_streams` and explores:
-
-- **Schema & data quality** — Null counts, summary statistics
-- **Distributions** — Log-scaling streaming metrics (highly skewed)
-- **Correlation** — Pitchfork avg score vs. total streams (Pearson, Spearman)
-- **Outlier detection** — Critics loved but commercially ignored; vice versa
-- **Visualizations** — Scatter plots with artist labels, trend analysis
-
-### Feature Engineering (`models/build_features.py`)
-
-Builds a tidy modeling dataset from the warehouse:
-
-**Input:** `vw_artist_critics_vs_streams`  
-**Output:** `data/processed/model_features.csv`
-
-**Features selected:**
-- **Critic signals:** review_count, avg_score, min/max score, year range
-- **Scale signals:** track_count, total_streams
-- **Engagement signals:** YouTube views, likes, comments
-- **Audio features:** avg danceability, energy, valence
-
-**Target:** `log1p(total_streams)` (handles zero/low stream artists)
-
-### Baseline ML Models (`models/train_baseline.py`)
-
-Two complementary models trained on the same feature set:
+Runs 11 deterministic steps in order. Stops on failure. No magic.
 
 ```
-Model: LinearRegression
-├─ RMSE: [calculated]
-├─ MAE: [calculated]
-└─ R² ≈ 0.32
-
-Model: RandomForestRegressor
-├─ RMSE: [calculated]
-├─ MAE: [calculated]
-└─ R² ≈ 0.56
+Extract        Clean           Match           Load           Validate
+Pitchfork  →  Reviews      →  Artists     →  Warehouse   →  Tests & Constraints
+Spotify    →  Features     →  (fuzzy)     →  (SQLite)    →  
+YouTube    →  Metrics      →  [3-way]     →  (views)     →  ✅ Pass or Fail
 ```
 
-**Outputs saved:**
-- `reports/metrics.json` — performance numbers
-- `reports/predictions_top50_*.csv` — predictions + actuals for top 50 artists by streams
+**Key scripts:**
+- `extract_pitchfork.py` — Parse Pitchfork SQLite dump
+- `stage_reviews.py` — Type-safe review metadata
+- `make_review_artists_bridge.py` — Handle multi-artist reviews
+- `clean_spotify_youtube.py` — Validate audio features, aggregate metrics
+- `match_artists.py` — **Fuzzy matching** (rapidfuzz) across 3 sources
+- `stage_to_sqlite.py` — Load into warehouse
+- `validate_dw.py` — **Final constraint checks** (uniqueness, referential integrity, nulls)
+
+### 🗄️ Warehouse Schema
+
+**File:** `data/processed/vinyl_dw.sqlite`
+
+```
+pitchfork_reviews ──┐
+                    ├─→ pitchfork_review_artists ──→ dim_artist ──→ spotify_youtube_clean
+                    │
+            (bridge table for many-to-many reviews)
+```
+
+**Core tables:**
+- `pitchfork_reviews` — 1 row per review
+- `pitchfork_review_artists` — Reviews split into artist rows
+- `dim_artist` — Canonical artist dimension with Spotify IDs
+- `spotify_youtube_clean` — Streaming metrics & audio features
+
+**Semantic views** (in `sql/dw/create_views.sql`):
+- `vw_review_with_artist` — Reviews + matched artist info
+- `vw_artist_summary` — Aggregated: review counts, scores
+- `vw_artist_streams` — Aggregated: streaming data
+- `vw_artist_critics_vs_streams` — ⭐ **Core analysis table** (17 columns, artist-level)
+- `vw_unmatched_artists` — Quality check: artists without Spotify match
+
+### ✅ Validation & Testing
+
+Before analysis, constraints are enforced:
+
+```python
+validate_dw.py checks:
+  ✅ Tables exist and have rows
+  ✅ Primary keys are unique
+  ✅ Foreign keys are valid (no orphans)
+  ✅ Critical columns are non-null
+  ✅ Bridge table references exist
+```
+
+**Tests:** `pytest tests/test_dw_smoke.py -v`
+
+### 📈 Analysis & Modeling
+
+**Notebook:** `notebooks/01_critics_vs_streams.ipynb`
+- Load data from warehouse views
+- Correlations: Pitchfork score vs. log(Spotify streams)
+- Outlier detection: critically loved but commercially ignored
+- Visualizations: scatter plots with artist labels
+
+**Feature engineering:** `models/build_features.py`
+- Critic signals: review_count, avg_score, year range
+- Scale signals: track_count, total_streams  
+- Engagement: YouTube views/likes/comments
+- Audio features: danceability, energy, valence
+
+**Baseline models:** `models/train_baseline.py`
+
+| Model | R² | RMSE | MAE |
+|-------|-----|------|-----|
+| Linear Regression | 0.32 | [calc] | [calc] |
+| Random Forest | 0.56 | [calc] | [calc] |
+
+**Key insight:** Even with 15 features, streaming popularity is mostly unexplained. Platform dynamics and luck dominate.
+
+**Outputs:**
+- `reports/metrics.json` — Performance metrics
+- `reports/predictions_top50_*.csv` — Predictions on top 50 artists
 - `reports/feature_importance.csv` — Random Forest feature importance
+
+### 📊 Interactive Dashboard
+
+**File:** `reports/vinyl_critics_vs_streams_dashboard.pbix`
+
+Power BI dashboard with:
+- Scatter plot: Pitchfork score vs. log Spotify streams
+- Genre & time trends
+- Interactive filters for deep dives
+- Artist labels on outliers
 
 ---
 
 ## Key Findings
 
-### 🎯 Correlation is Weak
-The relationship between Pitchfork scores and Spotify streams is surprisingly loose (R² ≈ 0.32 with linear regression). **Critics and the crowd don't align.**
+### 🎯 Weak Correlation
+Critics and listeners **don't align strongly** (R² ≈ 0.32). High Pitchfork scores don't guarantee streams.
 
 ### 📊 Mainstream Dominates
-A handful of mega-artists with mediocre critical reviews accumulate massive streams. Algorithm, playlisting, and reach matter more than critical acclaim.
+A few mega-artists get most streams, regardless of critical reception. **Algorithm and playlisting > critical acclaim.**
 
 ### 🎵 Hidden Gems Exist
-Many critically acclaimed artists remain obscure on streaming. Great music ≠ algorithmic discovery.
+Many critically acclaimed artists have tiny streaming numbers. **Great reviews ≠ discoverability.**
 
-### 🤖 ML Perspective
-Even with 10+ features (review counts, critic scores, audio characteristics), streaming popularity is **mostly unexplained**. Random Forest barely improves baseline (R² ≈ 0.56). **Platform dynamics, marketing, and luck dominate the signal.**
-
----
-
-## Power BI Dashboard
-
-For interactive exploration without running code:
-
-📊 **File:** `reports/vinyl_critics_vs_streams_dashboard.pbix`
-
-Includes:
-- **Scatter plot** of avg Pitchfork score vs. log Spotify streams (artist labels)
-- **Trend analysis** — critical reception patterns over time
-- **Genre breakdowns** — where outliers cluster
-- **Interactive filters** for artist and review count deep dives
-
-[Preview](assets/powerbi_dashboard_overview.png)
+### 🤖 Models Can't Explain It
+ML models barely improve over baseline. **Platform effects, marketing, and chance matter more than music quality.**
 
 ---
 
@@ -232,9 +158,9 @@ Includes:
 
 ### Prerequisites
 - Python 3.10+
-- ~2 GB disk (raw data + warehouse)
+- ~2 GB disk
 
-### 1. Clone & Setup
+### 1. Setup
 
 ```bash
 git clone <repo>
@@ -250,20 +176,21 @@ pip install -r requirements.txt
 python scripts/run_pipeline.py
 ```
 
-This will execute all 11 ETL steps deterministically. On failure, stops immediately with clear error.
-
-Expected output:
+**Expected output:**
 ```
-[1/11] extract_pitchfork ... OK
-[2/11] inspect_pitchfork ... OK
+[1/11] extract_pitchfork ........................ OK
+[2/11] inspect_pitchfork ........................ OK
+[3/11] stage_reviews ............................ OK
 ...
-[11/11] validate_dw ... OK
-Warehouse ready at: data/processed/vinyl_dw.sqlite
+[11/11] validate_dw ............................ OK
+✓ Warehouse ready at: data/processed/vinyl_dw.sqlite
 ```
+
+On error, stops immediately with clear message.
 
 ### 3. Explore
 
-**Option A: Jupyter notebook**
+**Option A: Jupyter**
 ```bash
 jupyter notebook notebooks/01_critics_vs_streams.ipynb
 ```
@@ -275,17 +202,23 @@ Open `reports/vinyl_critics_vs_streams_dashboard.pbix` in Power BI Desktop.
 ```python
 import sqlite3
 conn = sqlite3.connect("data/processed/vinyl_dw.sqlite")
-df = pd.read_sql("SELECT * FROM vw_artist_critics_vs_streams;", conn)
+df = pd.read_sql("""
+  SELECT artist, review_count, avg_score, total_streams 
+  FROM vw_artist_critics_vs_streams
+  WHERE review_count >= 2
+  ORDER BY total_streams DESC
+  LIMIT 50
+""", conn)
 ```
 
-### 4. Train Models
+### 4. Train Models (Optional)
 
 ```bash
 python models/build_features.py
 python models/train_baseline.py
 ```
 
-Results saved to `reports/metrics.json` and `reports/predictions_*.csv`.
+Results → `reports/metrics.json`, `reports/predictions_*.csv`
 
 ### 5. Run Tests
 
@@ -295,175 +228,122 @@ pytest tests/ -v
 
 ---
 
-## Project Structure
+## Project Layout
 
 ```
 vinyl-critics-vs-streams/
-├── README.md (this file)
-├── LICENSE (MIT)
+├── README.md
+├── LICENSE
 ├── requirements.txt, requirements-dev.txt
 │
 ├── data/
-│   ├── raw/
-│   │   ├── pitchfork/          # Pitchfork SQLite dump
-│   │   ├── spotify_attributes/ # Audio features CSV
-│   │   ├── spotify_youtube/    # Track-level metrics
-│   │   └── top_songs/          # Reference data
-│   ├── interim/                # Staging CSVs (cleaned, typed, validated)
+│   ├── raw/                 # Original data (not in git)
+│   │   ├── pitchfork/
+│   │   ├── spotify_attributes/
+│   │   ├── spotify_youtube/
+│   │   └── top_songs/
+│   ├── interim/             # Staging CSVs (from ETL)
 │   │   ├── pitchfork_reviews.csv
 │   │   ├── pitchfork_review_artists.csv
 │   │   ├── spotify_youtube_clean.csv
-│   │   └── [others]
-│   └── processed/
-│       ├── vinyl_dw.sqlite     # ⭐ The warehouse (tables + views)
-│       ├── artist_map.csv      # Artist matching results
-│       └── model_features.csv  # Features for ML
+│   │   └── ...
+│   └── processed/           # Final outputs
+│       ├── vinyl_dw.sqlite  # ⭐ Warehouse
+│       ├── artist_map.csv   # Artist matching results
+│       └── model_features.csv
 │
-├── scripts/                    # ETL orchestration (14 scripts, ran in order)
-│   ├── run_pipeline.py         # ⭐ Entry point: runs all steps deterministically
+├── scripts/                 # ETL orchestration
+│   ├── run_pipeline.py      # ⭐ Entry point
 │   ├── extract_pitchfork.py
 │   ├── stage_reviews.py
 │   ├── make_review_artists_bridge.py
 │   ├── build_artist_universe.py
 │   ├── clean_spotify_youtube.py
-│   ├── match_artists.py        # Fuzzy matching (rapidfuzz)
+│   ├── match_artists.py     # Fuzzy matching
 │   ├── load_reviews_and_bridge.py
 │   ├── load_dim_artist.py
 │   ├── stage_to_sqlite.py
-│   ├── validate_dw.py          # ⭐ Constraint validation (runs last)
-│   └── [others]
+│   └── validate_dw.py       # ⭐ Final validation
 │
 ├── sql/
 │   └── dw/
-│       └── create_views.sql    # ⭐ Semantic layer (6 production views)
+│       └── create_views.sql # ⭐ Semantic layer
 │
 ├── models/
-│   ├── build_features.py       # Feature extraction from warehouse
-│   └── train_baseline.py       # Linear Regression + Random Forest
+│   ├── build_features.py    # Feature extraction
+│   └── train_baseline.py    # Linear Regression + Random Forest
 │
 ├── notebooks/
-│   └── 01_critics_vs_streams.ipynb  # ⭐ Exploratory analysis + viz
+│   └── 01_critics_vs_streams.ipynb  # ⭐ Analysis & viz
 │
 ├── reports/
-│   ├── metrics.json            # ML performance (R², RMSE, MAE)
-│   ├── feature_importance.csv  # Random Forest importance
-│   ├── predictions_top50_*.csv # Top 50 artist predictions
-│   ├── model_card.md           # Model documentation
+│   ├── metrics.json
+│   ├── feature_importance.csv
+│   ├── predictions_top50_*.csv
+│   ├── model_card.md
 │   └── vinyl_critics_vs_streams_dashboard.pbix  # ⭐ Power BI
 │
 ├── tests/
-│   ├── test_dw_smoke.py        # ⭐ Table/view existence + row counts
-│   ├── test_dw_constraints.py  # Foreign key, uniqueness checks
-│   └── assert_clean.ps1        # PowerShell smoke test
+│   ├── test_dw_smoke.py     # Table/view checks
+│   └── test_dw_constraints.py
 │
 ├── docs/
-│   └── data_dictionary.md      # Complete schema documentation
+│   └── data_dictionary.md   # Complete schema docs
 │
 └── assets/
     └── powerbi_dashboard_overview.png
 ```
 
-**Key files highlighted with ⭐**
+---
+
+## How We Built This
+
+✅ **Multi-source ingestion** — Parsed 3 different data formats  
+✅ **Entity resolution** — Fuzzy-matched artists across platforms  
+✅ **Warehouse modeling** — Facts, dimensions, bridges, semantic views  
+✅ **Data contracts** — Validation enforced, no bad data downstream  
+✅ **Reproducibility** — Single CLI entry point, deterministic execution  
+✅ **Testing & CI** — Pytest suite, GitHub Actions pipeline  
+✅ **Exploration** — Jupyter + Power BI for insights  
+✅ **ML baseline** — Clean feature pipeline, defensible models
 
 ---
 
 ## Tech Stack
 
-| Layer | Tools |
-|-------|-------|
-| **Data Processing** | pandas, numpy, SQLite, SQL |
-| **Entity Matching** | rapidfuzz (fuzzy string matching) |
-| **ML / Stats** | scikit-learn (Linear Regression, Random Forest), numpy |
-| **Visualization** | matplotlib, Power BI |
-| **Testing & Validation** | pytest, custom validation logic |
-| **Analysis & Exploration** | Jupyter Notebook |
-| **Orchestration** | Python subprocess (deterministic CLI) |
-| **CI/CD** | GitHub Actions |
+- **Data:** pandas, numpy, SQLite, SQL
+- **Entity matching:** rapidfuzz (fuzzy string similarity)
+- **ML:** scikit-learn (Linear Regression, Random Forest)
+- **Visualization:** matplotlib, Power BI
+- **Testing:** pytest
+- **Orchestration:** Python CLI (subprocess)
+- **CI/CD:** GitHub Actions
 
 ---
 
-## The Engineering
+## Next Steps & Ideas
 
-Production-grade data infrastructure:
-
-✅ **Messy ingestion** — Pitchfork and Spotify have different schemas and artist naming  
-✅ **Entity resolution** — Matching artists across sources is non-trivial  
-✅ **Warehouse modeling** — Facts, dimensions, and bridges for queryability  
-✅ **Data contracts** — Validation enforced before analysis  
-✅ **Reproducibility** — Single entry point, deterministic pipeline, CI automation  
-✅ **Defensible analysis** — From raw data to actionable conclusions
-│   ├── feature_importance.csv  # Random Forest importance
-│   ├── predictions_top50_*.csv # Top 50 artist predictions
-│   ├── model_card.md           # Model documentation
-│   └── vinyl_critics_vs_streams_dashboard.pbix  # ⭐ Power BI
-│
-├── tests/
-│   ├── test_dw_smoke.py        # ⭐ Table/view existence + row counts
-│   ├── test_dw_constraints.py  # Foreign key, uniqueness checks
-│   └── assert_clean.ps1        # PowerShell smoke test
-│
-├── docs/
-│   └── data_dictionary.md      # Complete schema documentation
-│
-└── assets/
-    └── powerbi_dashboard_overview.png
-```
-
-**Key files highlighted with ⭐**
-
----
-
-## Power BI Dashboard
-
-For interactive exploration without running code:
-
-📊 **File:** `reports/vinyl_critics_vs_streams_dashboard.pbix`
-
-Includes:
-- **Scatter plot** of avg Pitchfork score vs. log Spotify streams (artist labels)
-- **Trend analysis** — critical reception patterns over time
-- **Genre breakdowns** — where outliers cluster
-- **Interactive filters** for artist and review count deep dives
-
-[Preview](assets/powerbi_dashboard_overview.png)
-
----
-
-## The Engineering
-
-Production-grade data infrastructure:
-
-✅ **Messy ingestion** — Pitchfork and Spotify have different schemas and artist naming  
-✅ **Entity resolution** — Matching artists across sources is non-trivial  
-✅ **Warehouse modeling** — Facts, dimensions, and bridges for queryability  
-✅ **Data contracts** — Validation enforced before analysis  
-✅ **Reproducibility** — Single entry point, deterministic pipeline, CI automation  
-✅ **Defensible analysis** — From raw data to actionable conclusions
----
-
-## Ideas for Extension
-
-- **Manual override rules** for artist matching (when fuzzy matching isn't enough)
-- **Track-level modeling** instead of artist aggregates (finer granularity)
-- **Popularity clustering** (find cohorts of similar artists)
-- **Web dashboard** (Streamlit for real-time analysis)
-- **Temporal analysis** using review chronology (predict streaming from critic trends)
-- **Causal inference** — isolate platform effects vs. artist quality
+- **Manual artist matching rules** for problem cases
+- **Track-level modeling** (instead of artist aggregates)
+- **Popularity clustering** (find similar artist cohorts)
+- **Web dashboard** (Streamlit for real-time exploration)
+- **Temporal analysis** (do critic trends predict streaming trends?)
+- **Causal inference** (isolate platform effects from artist quality)
 
 ---
 
 ## Documentation
 
-- **[Data Dictionary](docs/data_dictionary.md)** — Complete schema for warehouse tables and views
-- **[Model Card](reports/model_card.md)** — ML baseline documentation and caveats
+- **[Data Dictionary](docs/data_dictionary.md)** — Table/view schema details
+- **[Model Card](reports/model_card.md)** — Model documentation & limitations
 - **[Power BI Dashboard](reports/vinyl_critics_vs_streams_dashboard.pbix)** — Interactive exploration
 
 ---
 
 ## License
 
-MIT — use freely, credit appreciated.
+MIT — use, modify, and distribute freely.
 
 ---
 
-**Real data. Real engineering. Real results.**
+**Real data. Real problems. Real solutions.**
