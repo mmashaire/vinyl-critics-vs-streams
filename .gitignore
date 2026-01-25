@@ -26,3 +26,13 @@ venv/
 # Ignore system files
 .DS_Store
 Thumbs.db
+
+# Generated outputs
+data/interim/
+data/processed/
+*.sqlite
+*.db
+*.sqlite-wal
+*.sqlite-shm
+*.wal
+*.shm
