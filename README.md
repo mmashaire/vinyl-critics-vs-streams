@@ -1,235 +1,175 @@
 <p align="left">
-
-<!-- Python version -->
-<a href="https://www.python.org/">
-  <img src="https://img.shields.io/badge/Python-3.10+-blue.svg" alt="Python 3.10+">
-</a>
-
-<!-- License -->
-<a href="LICENSE">
-  <img src="https://img.shields.io/badge/License-MIT-green.svg" alt="MIT License">
-</a>
-
-<!-- Repo size -->
-<img src="https://img.shields.io/github/repo-size/mmashaire/vinyl-critics-vs-streams" alt="Repo Size">
-
-<!-- Last commit -->
-<img src="https://img.shields.io/github/last-commit/mmashaire/vinyl-critics-vs-streams" alt="Last Commit">
-
-<!-- Stars -->
-<img src="https://img.shields.io/github/stars/mmashaire/vinyl-critics-vs-streams?style=social" alt="GitHub stars">
-
+  <a href="https://www.python.org/">
+    <img src="https://img.shields.io/badge/Python-3.10+-blue.svg" alt="Python 3.10+">
+  </a>
+  <a href="LICENSE">
+    <img src="https://img.shields.io/badge/License-MIT-green.svg" alt="MIT License">
+  </a>
+  <img src="https://img.shields.io/github/repo-size/mmashaire/vinyl-critics-vs-streams" alt="Repo Size">
+  <img src="https://img.shields.io/github/last-commit/mmashaire/vinyl-critics-vs-streams" alt="Last Commit">
+  <img src="https://img.shields.io/github/stars/mmashaire/vinyl-critics-vs-streams?style=social" alt="GitHub stars">
 </p>
 
-# Vinyl Critics vs Streams
+# 🎵 Vinyl Critics vs Streams
 
-This project compares Pitchfork critic scores with Spotify and YouTube streaming performance.  
-The aim is to build a clean, reproducible workflow from raw data to analysis and highlight cases where critical reception diverges from mainstream listening patterns.
+An end-to-end **data engineering & ML project** that answers a surprisingly tricky question:
 
----
+> **Do critics and listeners like the same music?**
 
-## Project Objectives
+This repo demonstrates real-world data pipeline practices — messy ingestion, entity resolution, warehouse modeling, validation, and actionable insights — all with actual music industry data.
 
-- Build a small but realistic ETL process based on Pitchfork and Spotify/YouTube datasets  
-- Clean and standardise review data, including multi-artist reviews and date parsing  
-- Create a SQLite warehouse with clear dimension and fact tables  
-- Perform entity resolution between Pitchfork and Spotify artist names  
-- Expose a stable analysis layer through SQL views  
-- Explore where critic sentiment aligns or misaligns with streaming popularity  
-- Identify artists who are critically acclaimed but commercially underrepresented (and vice versa)
+### The Question
+
+Critics reward artistry, innovation, and cultural influence. Streaming platforms amplify reach, algorithmic discovery, and playlist placement. How closely do these worlds overlap? Where do they clash?
 
 ---
 
-## Data Pipeline Overview
+## What This Project Does
 
-### Raw Data
+**Data pipeline side:** Ingest Pitchfork review data, Spotify metrics, and YouTube stats. Clean them. Match artists across sources. Build a SQLite warehouse with validated dimensions and facts. Expose a semantic layer.
 
-Located under `data/raw/`:
+**Analysis side:** Find the correlation (spoiler: it's weak). Identify outliers — critically loved but commercially ignored artists, and vice versa. Train ML models to see how much of streaming popularity can be explained by critical reception.
 
-- Pitchfork SQLite dump (reviews, artists, genres, labels)  
-- Spotify and YouTube track-level metrics  
+**Engineering side:** Prove it works. Automated validation, deterministic CI pipeline, schema contracts, comprehensive testing.
 
-### Staging & Cleaning
-
-Scripts in `scripts/` perform:
-
-- Parsing and typing of Pitchfork review fields  
-- Splitting multi-artist reviews into a bridge table  
-- Fuzzy artist matching using `rapidfuzz`  
-- Building intermediate CSVs for validation and loading  
-
-### Data Warehouse
-
-The warehouse lives at `data/processed/vinyl_dw.sqlite`.  
-SQL in `sql/dw/` defines the semantic layer.
-
-Key views:
-
-- `vw_review_with_artist`  
-- `vw_unmatched_artists`  
-- `vw_artist_summary`  
-- `vw_artist_streams`  
-- `vw_artist_critics_vs_streams`  
-
-These views act as the main entry points for notebooks, dashboards, or external queries.
-
----
-
-## Architecture
+## The Pipeline
 
 ```mermaid
 flowchart LR
-    subgraph RAW["Raw data (data/raw)"]
-        PF["Pitchfork database.sqlite"]
-        SY["Spotify_Youtube.csv"]
-        SA["spotify_attributes/data.csv"]
-        TS["universal_top_spotify_songs.csv"]
-    end
+    RAW["Raw Data"] --> ETL["Extract & Clean"]
+    ETL --> STAGE["Staging CSVs"]
+    STAGE --> DW["SQLite Warehouse"]
+    DW --> VIEWS["Semantic Views"]
+    VIEWS --> ANALYSIS["Analysis & ML"]
+```
 
-    subgraph SCRIPTS["Python ETL scripts (scripts/)"]
-        EP["extract_pitchfork.py"]
-        SR["stage_reviews.py"]
-        MR["make_review_artists_bridge.py"]
-        CS["clean_spotify_youtube.py"]
-        MA["match_artists.py"]
-        LDA["load_dim_artist.py"]
-        LRB["load_reviews_and_bridge.py"]
-    end
+### 1️⃣ Raw Data
+- **Pitchfork**: Review scores, artists, genres, labels
+- **Spotify + YouTube**: Track metrics, streaming counts, audio features
 
-    subgraph STAGING["Staging & overrides (data/interim, data/overrides)"]
-        PRC["pitchfork_reviews_typed.csv"]
-        PRA["pitchfork_review_artists.csv"]
-        SYC["spotify_youtube_clean.csv"]
-        AM["artist_map.csv"]
-        ARQ["artist_review_queue.csv"]
-    end
+### 2️⃣ Staging & Cleaning
+All ETL lives in `scripts/`. The pipeline handles:
+- **Type-safe parsing** of review metadata
+- **Multi-artist splitting** (some reviews cover multiple acts)
+- **Fuzzy matching** via `rapidfuzz` to resolve artists across platforms
+- **Intermediate validation** before warehouse load
 
-    subgraph WAREHOUSE["SQLite warehouse (data/processed/vinyl_dw.sqlite)"]
-        PRT["pitchfork_reviews"]
-        PRA_T["pitchfork_review_artists"]
-        DA["dim_artist"]
-        SY_T["spotify_youtube_clean"]
-    end
+### 3️⃣ Data Warehouse
+A single SQLite database (`data/processed/vinyl_dw.sqlite`) containing:
+- **Fact tables** for reviews and streaming metrics
+- **Canonical artist dimension** with matched IDs
+- **Bridge tables** for many-to-many relationships
 
-    subgraph VIEWS["SQL views (sql/dw/create_views.sql)"]
-        RVA["vw_review_with_artist"]
-        UMA["vw_unmatched_artists"]
-        ASM["vw_artist_summary"]
-        AST["vw_artist_streams"]
-        CVS["vw_artist_critics_vs_streams"]
-    end
+The semantic layer (in `sql/dw/create_views.sql`) exposes clean views:
+- `vw_review_with_artist` — enriched review data
+- `vw_artist_summary` — aggregated critic scores per artist
+- `vw_artist_streams` — streaming metrics per artist
+- `vw_artist_critics_vs_streams` — the core analysis table
+- `vw_unmatched_artists` — data quality check
 
-    subgraph ANALYSIS["Analysis & outputs"]
-        NB["01_critics_vs_streams.ipynb"]
-        PLOT["critic_vs_streams_labeled.png"]
-        README["README.md"]
-    end
+### 4️⃣ Validation & Testing
+Before any analysis, the warehouse is tested:
+- Table presence and schema checks
+- Dimension uniqueness and referential integrity
+- Null handling on critical fields
+- Orphan detection in bridge tables
+- Automated smoke tests in GitHub Actions
 
-    RAW --> SCRIPTS
-    SCRIPTS --> STAGING
-    STAGING --> WAREHOUSE
-    WAREHOUSE --> VIEWS
-    VIEWS --> NB
-    NB --> PLOT
-    NB --> README
+See `scripts/validate_dw.py` and `tests/` for details.
+
+---
+
+## Key Findings
+
+### 🎯 Correlation is Weak
+The relationship between Pitchfork scores and Spotify streams is surprisingly loose (R² ≈ 0.32 with linear regression). **Critics and the crowd don't align.**
+
+### 📊 Mainstream Dominates
+A handful of mega-artists with mediocre critical reviews accumulate massive streams. Algorithm, playlisting, and reach matter more than critical acclaim.
+
+### 🎵 Hidden Gems Exist
+Many critically acclaimed artists remain obscure on streaming. Great music ≠ algorithmic discovery.
+
+### 🤖 ML Perspective
+Even with 10+ features (review counts, critic scores, audio characteristics), streaming popularity is **mostly unexplained**. Random Forest barely improves baseline (R² ≈ 0.56). **Platform dynamics, marketing, and luck dominate the signal.**
+
+---
+
+## How to Run It
+
+### Setup
+```bash
+python -m venv venv
+source venv/Scripts/activate  # Windows: venv\Scripts\activate
+pip install -r requirements.txt
+```
+
+### Run the full pipeline
+```bash
+python scripts/run_pipeline.py
+```
+
+This will:
+- Extract and clean Pitchfork data
+- Match artists across Spotify/YouTube
+- Load the warehouse
+- Validate constraints
+- Stop on failure (deterministic CI-ready)
+
+### Explore the analysis
+Open `notebooks/01_critics_vs_streams.ipynb` to see the correlation analysis and visualizations.
+
+### Run tests
+```bash
+pytest tests/
 ```
 
 ---
 
-## Analytical Notebook
+## Tech Stack
 
-The main analysis is in `notebooks/01_critics_vs_streams.ipynb`.
-
-It covers:
-
-- Loading the warehouse via SQLite + pandas  
-- Schema, range, and missing-value checks  
-- Log-scaling of skewed streaming metrics  
-- Correlation checks between critic scores and streams  
-- Identification of outliers (e.g., “underrated” or “overrated” artists)  
-- Visualisation of critic vs. streaming relationships  
-
----
-
-## Key Visualisation
-
-The scatter plot compares average Pitchfork score with the log of total Spotify streams.  
-Artists included: at least 2 Pitchfork reviews and 5+ tracks with streaming data.
-
-A small number of outliers are labelled to highlight interesting deviations.
-
-![Critics vs Streams](assets/critic_vs_streams_labeled.png)
+| Component | Tool |
+|-----------|------|
+| **Data Processing** | pandas, numpy |
+| **Database** | SQLite + SQL views |
+| **Entity Matching** | rapidfuzz (fuzzy string matching) |
+| **ML** | scikit-learn (Linear Regression, Random Forest) |
+| **Viz** | matplotlib, Power BI |
+| **Testing** | pytest, GitHub Actions |
+| **Analysis** | Jupyter Notebook |
 
 ---
 
-## Power BI Dashboard
+## Why This Matters
 
-A Power BI dashboard version of the analysis is included for interactive exploration (filters for artist, review count, and first review year).
+This isn't a toy project. It demonstrates **real data engineering**:
 
-> The image below is a static preview. The interactive `.pbix` report file is included in the repository.
+✅ **Messy ingestion** — Pitchfork and Spotify have different schemas and artist naming  
+✅ **Entity resolution** — Matching artists across sources is non-trivial  
+✅ **Warehouse modeling** — Facts, dimensions, and bridges for queryability  
+✅ **Data contracts** — Validation enforced before analysis  
+✅ **Reproducibility** — Single entry point, deterministic pipeline, CI automation  
+✅ **Defensible analysis** — From raw data to actionable conclusions
 
-![Power BI Dashboard Overview](assets/powerbi_dashboard_overview.png)
+The focus is **clarity and rigor**, not flashy frameworks.
+---
 
-### Files
-- `reports/vinyl_critics_vs_streams_dashboard.pbix` — interactive Power BI report
-- `assets/powerbi_dashboard_overview.png` — dashboard preview image
+## Next Steps
 
-### Interpretation
+Possible extensions (and why they'd be cool):
 
-- The overall correlation between critic favourability and streaming scale is weak.  
-- Artists such as Post Malone, Coldplay, Sia, Red Hot Chili Peppers, and Green Day  
-  have extremely high streaming counts but only mid-range Pitchfork scores.  
-- Highly acclaimed artists such as John Coltrane, Ennio Morricone, and Caetano Veloso  
-  sit well below the top streaming tier.  
-- The pattern reflects a common reality:  
-  critics emphasise artistry and influence,  
-  while streaming ecosystems amplify virality, playlisting, and algorithmic reach.
-
-### Example Outliers (labelled in the plot)
-
-| Artist                | Avg Score | Log10 Streams | Reviews | Tracks |
-|-----------------------|-----------|---------------|---------|--------|
-| Post Malone           | 4.85      | 10.18         | 2       | 10     |
-| Coldplay              | 5.72      | 10.07         | 10      | 10     |
-| Sia                   | 5.85      | 9.87          | 4       | 10     |
-| Red Hot Chili Peppers | 5.60      | 9.83          | 5       | 10     |
-| Green Day             | 5.72      | 9.66          | 5       | 10     |
-| John Coltrane         | 9.50      | 8.61          | 3       | 10     |
-| Ennio Morricone       | 8.57      | 8.42          | 3       | 10     |
-| Caetano Veloso        | 8.84      | 8.31          | 5       | 10     |
+- **Manual override rules** for artist matching (when fuzzy matching isn't enough)
+- **Track-level modeling** instead of artist aggregates (finer granularity)
+- **Popularity clustering** (find cohorts of similar artists)
+- **Lightweight dashboard** (Streamlit or Metabase for interactive exploration)
+- **Temporal models** using review chronology (do critic trends predict streaming trends?)
 
 ---
 
-## Technical Stack
+## License
 
-- Python (pandas, numpy, matplotlib)  
-- SQLite for the warehouse  
-- rapidfuzz for string matching  
-- Jupyter Notebook for exploratory work  
-- Modular ETL scripts for loading and transformation  
+MIT — use freely, credit appreciated.
 
 ---
 
-## Possible Extensions
-
-- Add manual mapping overrides to refine fuzzy artist matching  
-- Introduce Spotify popularity indexes and playlist exposure features  
-- Expand analysis to track-level correlations  
-- Build a lightweight dashboard (Streamlit, Dash, or SQLite + Metabase)  
-- Add regression or clustering models to understand the drivers of popularity  
-
----
-
-## Purpose of the Project
-
-The repository demonstrates an end-to-end workflow that is typical in data engineering and analytics:
-
-- ingesting heterogeneous data  
-- cleaning and standardising inconsistent structure  
-- resolving entities between sources  
-- modelling the data into a warehouse  
-- exposing semantic views for analysis  
-- performing exploratory analytics and visualisation  
-
-It is designed as a compact, realistic example of how a full analytics workflow is built and communicated.
-
+**Made to demonstrate how real data projects are built.** Questions? Open an issue or reach out.
