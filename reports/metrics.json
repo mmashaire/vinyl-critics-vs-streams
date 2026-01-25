@@ -1,0 +1,20 @@
+[
+  {
+    "n_rows": 282,
+    "n_features": 14,
+    "target_transform": "log1p(total_streams)",
+    "model": "linear_regression",
+    "rmse": 0.7977556572298078,
+    "mae": 0.5912031173821664,
+    "r2": 0.3217966905028621
+  },
+  {
+    "n_rows": 282,
+    "n_features": 14,
+    "target_transform": "log1p(total_streams)",
+    "model": "random_forest",
+    "rmse": 0.6428668826570446,
+    "mae": 0.42254369293945265,
+    "r2": 0.5595848736730207
+  }
+]
