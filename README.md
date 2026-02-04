@@ -5,6 +5,100 @@
   <a href="LICENSE">
     <img src="https://img.shields.io/badge/License-MIT-green.svg" alt="MIT License">
   </a>
+</p>
+
+# Vinyl — Critics vs Streams
+
+A compact, reproducible data engineering + ML project that explores whether critical acclaim (Pitchfork) lines up with listener popularity (Spotify/YouTube).
+
+This repo is intended as a portfolio piece: clean ETL, a validated warehouse, clear tests, and a small modeling experiment. The code is readable and safe to run locally.
+
+Quick highlights
+- Warehouse: a small, self-contained SQLite warehouse at `data/processed/vinyl_dw.sqlite`.
+- Reproducible pipeline: `scripts/run_pipeline.py` builds the warehouse end-to-end.
+- Maintenance: `scripts/maintenance/repair_warehouse.py` is a safe, idempotent tool for common fixes.
+- Tests: `pytest tests/` enforces data contracts and smoke checks.
+
+Why this project
+- Shows multi-source ingestion and entity resolution.
+- Demonstrates production-minded practices: backups, changelogs, and validation.
+- Small, focused modeling to illustrate limitations of simple predictors.
+
+Getting started
+
+Prerequisites
+- Python 3.10+
+- ~2 GB disk
+
+Setup
+```bash
+git clone <repo-url>
+cd vinyl-critics-vs-streams
+python -m venv venv
+venv\Scripts\activate   # Windows
+pip install -r requirements.txt
+```
+
+Build the warehouse (recommended)
+```bash
+python scripts/run_pipeline.py
+```
+This runs the full ETL: extract → stage → match → load → validate. The pipeline is deterministic and stops on failure.
+
+Quick checks
+```bash
+python scripts/maintenance/repair_warehouse.py    # dry-run by default
+python scripts/maintenance/repair_warehouse.py --apply  # apply changes
+python scripts/maintenance/debug_blanks.py       # inspect blank-artist rows
+pytest tests/ -q
+```
+
+What to look at
+- `notebooks/01_critics_vs_streams.ipynb` — exploration and visuals.
+- `models/build_features.py` + `models/train_baseline.py` — feature pipeline and baseline models.
+- `sql/dw/create_views.sql` — semantic views that power analysis.
+
+Project layout (short)
+
+```
+data/                # raw, interim, processed (warehouse)
+scripts/             # ETL orchestration + maintenance
+scripts/maintenance/ # safe, documented maintenance helpers
+models/              # feature building and training
+notebooks/           # analysis and visualization
+reports/             # metrics, feature importance, PBIX dashboard
+tests/               # automated checks for the warehouse
+```
+
+Design notes (for reviewers)
+- Safety first: maintenance scripts back up the DB and write a `maintenance_changelog` before mutating data.
+- Idempotency: `repair_warehouse.py` runs in dry-run mode by default. Operations are recorded so repeated runs are safe.
+- Readability: functions are small and have short docstrings. Aim was clarity over cleverness.
+
+If you clone this repo
+- Run the pipeline, inspect `data/processed/vinyl_dw.sqlite`, and open the notebook.
+- Tests are lightweight — they should pass quickly on an up-to-date warehouse.
+
+License
+
+MIT — see `LICENSE`.
+
+Contributing
+
+If you want to contribute: open an issue describing the change, or a small PR. Keep logic clear and add tests for any behavior changes.
+
+Contact
+
+Owner: mmashaire (GitHub)
+
+— end —
+<p align="left">
+  <a href="https://www.python.org/">
+    <img src="https://img.shields.io/badge/Python-3.10+-blue.svg" alt="Python 3.10+">
+  </a>
+  <a href="LICENSE">
+    <img src="https://img.shields.io/badge/License-MIT-green.svg" alt="MIT License">
+  </a>
   <img src="https://img.shields.io/github/repo-size/mmashaire/vinyl-critics-vs-streams" alt="Repo Size">
   <img src="https://img.shields.io/github/last-commit/mmashaire/vinyl-critics-vs-streams" alt="Last Commit">
 </p>
