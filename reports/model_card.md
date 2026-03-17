@@ -47,6 +47,11 @@ See `reports/metrics.json`.
 - Possible survivorship bias: artists in the dataset may not represent the full music ecosystem.
 - Feature set is incomplete (no marketing spend, tour activity, social media, playlist adds).
 
+## Ethical Considerations
+- **Bias in Critic Data**: Pitchfork reviews may reflect cultural biases in music criticism, potentially underrepresenting certain genres or artists.
+- **Data Privacy**: Ensure all data sources comply with privacy regulations; no personal user data is used here.
+- **Fair Representation**: Models should not reinforce stereotypes about "critic-approved" vs. "popular" music; this is exploratory only.
+
 ## Leakage / Integrity Notes
 - Features are derived from the same integrated dataset; no future information beyond the aggregated view is used.
 - The model predicts scale, not future growth; this is cross-sectional.

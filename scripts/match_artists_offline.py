@@ -1,11 +1,12 @@
 from __future__ import annotations
 
-from pathlib import Path
-from collections import defaultdict
-import unicodedata
-import pandas as pd
-import re
 import json
+import re
+import unicodedata
+from collections import defaultdict
+from pathlib import Path
+
+import pandas as pd
 
 # Repo-local IO only (no secrets / network)
 UNIVERSE_CSV = Path("data/processed/artist_universe.csv")
@@ -21,9 +22,9 @@ def norm(s: str) -> str:
     if not isinstance(s, str):
         return ""
     s = unicodedata.normalize("NFKC", s)
-    s = s.replace("µ", "mu").replace("μ", "mu")           # μ/µ -> mu
+    s = s.replace("µ", "mu").replace("μ", "mu")  # μ/µ -> mu
     s = re.sub(r"\b(feat\.?|ft\.?|featuring)\b.*$", "", s, flags=re.I)
-    s = re.sub(r"[’`']", "", s)                           # unify apostrophes
+    s = re.sub(r"[’`']", "", s)  # unify apostrophes
     s = re.sub(r"[\s._\-]+", " ", s).strip()
     return s.casefold()
 
@@ -32,6 +33,8 @@ LABEL_RE = re.compile(
     r"\b(records?|recordings?|music|music\s+group|entertainment|studios?|llc|inc\.?|ltd\.?)\b",
     re.I,
 )
+
+
 def looks_like_label(name: str) -> bool:
     return bool(LABEL_RE.search(name))
 
@@ -121,7 +124,11 @@ def main() -> None:
         raise FileNotFoundError(f"Missing {UNIVERSE_CSV}. Build it first.")
 
     u = pd.read_csv(UNIVERSE_CSV)
-    cols = [c for c in ["artist", "artist_norm", "n_reviews", "is_various", "is_suspicious_token"] if c in u.columns]
+    cols = [
+        c
+        for c in ["artist", "artist_norm", "n_reviews", "is_various", "is_suspicious_token"]
+        if c in u.columns
+    ]
     u = u[cols].copy()
     if "is_various" in u.columns:
         u = u[u["is_various"] == False]
@@ -137,7 +144,9 @@ def main() -> None:
         out = u.assign(artist_spotify=pd.NA, match_type="none", score=0.0, spotify_artist_id=pd.NA)
         OUT_CSV.parent.mkdir(parents=True, exist_ok=True)
         out.to_csv(OUT_CSV, index=False)
-        print(f"[warn] no local spotify candidates found; wrote skeleton {OUT_CSV} ({len(out):,} rows)")
+        print(
+            f"[warn] no local spotify candidates found; wrote skeleton {OUT_CSV} ({len(out):,} rows)"
+        )
         return
 
     print(f"[info] candidate names found: {len(cand):,}")
@@ -186,16 +195,17 @@ def main() -> None:
 
     # De-dupe by key: keep best-scoring, then higher n_reviews
     if left["artist_norm"].duplicated().any():
-        left = (
-            left.sort_values(["artist_norm", "score", "n_reviews"], ascending=[True, False, False])
-            .drop_duplicates(subset=["artist_norm"], keep="first")
-        )
+        left = left.sort_values(
+            ["artist_norm", "score", "n_reviews"], ascending=[True, False, False]
+        ).drop_duplicates(subset=["artist_norm"], keep="first")
 
     # Summary
     n_total = len(left)
     n_exact = int((left["match_type"] == "exact_norm").sum())
     n_fuzzy = int((left["match_type"] == "jaccard_token").sum())
-    print(f"[summary] matched exact={n_exact} ({n_exact/n_total:.1%}), fuzzy={n_fuzzy} ({n_fuzzy/n_total:.1%}), total={n_total}")
+    print(
+        f"[summary] matched exact={n_exact} ({n_exact/n_total:.1%}), fuzzy={n_fuzzy} ({n_fuzzy/n_total:.1%}), total={n_total}"
+    )
 
     OUT_CSV.parent.mkdir(parents=True, exist_ok=True)
     left.sort_values(["score", "n_reviews"], ascending=[False, False]).to_csv(OUT_CSV, index=False)

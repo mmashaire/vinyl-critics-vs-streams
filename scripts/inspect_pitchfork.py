@@ -1,9 +1,16 @@
-from pathlib import Path
 import sqlite3
+from pathlib import Path
+
 import pandas as pd
 
-# Input DB. Keep this as an absolute path to avoid surprises when running from different folders.
-DB_PATH = Path(r"D:\Projects\vinyl-critics-vs-streams\data\raw\pitchfork\database.sqlite")
+
+def repo_root() -> Path:
+    """Get the repository root directory."""
+    return Path(__file__).resolve().parent.parent
+
+
+# Input DB. Keep this as a relative path for portability.
+DB_PATH = repo_root() / "data" / "raw" / "pitchfork" / "database.sqlite"
 
 # Quick gate: fail fast if the source isn't where we think it is.
 if not DB_PATH.exists():
@@ -16,9 +23,9 @@ SAMPLE_ROWS = 10
 # Use a context manager so the DB handle closes even if something throws.
 with sqlite3.connect(str(DB_PATH)) as con:
     # Discover available tables from SQLite's catalog.
-    tables = pd.read_sql(
-        "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name;", con
-    )["name"].tolist()
+    tables = pd.read_sql("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name;", con)[
+        "name"
+    ].tolist()
     print("Tables:", tables)
 
     if SAMPLE_TABLE not in tables:
@@ -31,9 +38,7 @@ with sqlite3.connect(str(DB_PATH)) as con:
     print(schema[["cid", "name", "type", "notnull"]].to_string(index=False))
 
     # Grab a tiny slice so you can eyeball typical values without pulling the whole table.
-    df = pd.read_sql(
-        f"SELECT * FROM {SAMPLE_TABLE} LIMIT ?;", con, params=(SAMPLE_ROWS,)
-    )
+    df = pd.read_sql(f"SELECT * FROM {SAMPLE_TABLE} LIMIT ?;", con, params=(SAMPLE_ROWS,))
     print(f"\nSample rows from {SAMPLE_TABLE} ({len(df)} rows):")
     print(df)
 

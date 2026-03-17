@@ -1,14 +1,21 @@
-from pathlib import Path
-import sqlite3
-import pandas as pd
-import sys
-import json
 import hashlib
+import json
+import sqlite3
+import sys
 from datetime import datetime, timezone
+from pathlib import Path
+
+import pandas as pd
+
+
+def repo_root() -> Path:
+    """Get the repository root directory."""
+    return Path(__file__).resolve().parent.parent
+
 
 # Source SQLite dump (immutable input) and destination for extracted CSVs.
-RAW_DB = Path(r"D:\Projects\vinyl-critics-vs-streams\data\raw\pitchfork\database.sqlite")
-OUTDIR = Path(r"D:\Projects\vinyl-critics-vs-streams\data\interim")
+RAW_DB = repo_root() / "data" / "raw" / "pitchfork" / "database.sqlite"
+OUTDIR = repo_root() / "data" / "interim"
 
 # Expected tables for downstream joins. Keep tight to avoid drifting schemas.
 TABLES = ["artists", "reviews", "genres", "labels", "years", "content"]
@@ -27,6 +34,7 @@ if not RAW_DB.exists():
 # Idempotent: safe to run repeatedly in local dev or CI.
 OUTDIR.mkdir(parents=True, exist_ok=True)
 
+
 def sha256_file(path: Path, chunk_size: int = 1024 * 1024) -> str:
     """Memory-safe hashing for reproducibility & drift detection."""
     h = hashlib.sha256()
@@ -34,6 +42,7 @@ def sha256_file(path: Path, chunk_size: int = 1024 * 1024) -> str:
         for chunk in iter(lambda: f.read(chunk_size), b""):
             h.update(chunk)
     return h.hexdigest()
+
 
 con = sqlite3.connect(str(RAW_DB))
 manifest = {
@@ -45,15 +54,15 @@ manifest = {
     "totals": {"tables_exported": 0, "rows_exported": 0, "bytes_exported": 0},
     "notes": [
         "sha256 is of the CSV at export time; commit this manifest to detect drift.",
-        "missing_tables indicates expected-but-absent tables in the SQLite dump."
+        "missing_tables indicates expected-but-absent tables in the SQLite dump.",
     ],
 }
 
 try:
     # Inventory the schema once; avoids hard-coded assumptions about what's present.
-    existing = pd.read_sql(
-        "SELECT name FROM sqlite_master WHERE type='table';", con
-    )["name"].tolist()
+    existing = pd.read_sql("SELECT name FROM sqlite_master WHERE type='table';", con)[
+        "name"
+    ].tolist()
     print(f"[info] tables found: {existing}")
 
     # Surface drift explicitly: warn if the upstream dump changed.

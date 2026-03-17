@@ -1,17 +1,24 @@
-from pathlib import Path
 import sqlite3
+from pathlib import Path
+
 import pandas as pd
 
 DB = Path("data/processed/vinyl_dw.sqlite")
 REV = Path("data/interim/pitchfork_reviews_typed.csv")
 BRIDGE = Path("data/interim/pitchfork_review_artists.csv")
 
+
 def create_index(conn, table, index_name, columns_or_expr):
     cur = conn.execute(f"PRAGMA table_info({table});")
     cols = {r[1] for r in cur.fetchall()}
-    needed_cols = {c for c in columns_or_expr.replace("LOWER(", "").replace(")", "").split(",") if c.isidentifier()}
+    needed_cols = {
+        c
+        for c in columns_or_expr.replace("LOWER(", "").replace(")", "").split(",")
+        if c.isidentifier()
+    }
     if needed_cols.issubset(cols):
         conn.execute(f"CREATE INDEX IF NOT EXISTS {index_name} ON {table}({columns_or_expr});")
+
 
 with sqlite3.connect(DB) as con:
     con.execute("PRAGMA journal_mode=WAL;")

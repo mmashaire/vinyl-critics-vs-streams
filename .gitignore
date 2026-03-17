@@ -36,3 +36,5 @@ data/processed/
 *.sqlite-shm
 *.wal
 *.shm
+
+data/processed/model_features.csv

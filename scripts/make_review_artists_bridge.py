@@ -1,7 +1,8 @@
-from pathlib import Path
-import unicodedata
-import pandas as pd
 import re
+import unicodedata
+from pathlib import Path
+
+import pandas as pd
 
 SRC = Path("data/interim/pitchfork_reviews_typed.csv")
 OUT = Path("data/interim/pitchfork_review_artists.csv")
@@ -12,10 +13,12 @@ SEP_RE = re.compile(r"\s*(?:,|&|/|\+|\band\b|\bfeat\.?\b|\bfeaturing\b|\bwith\b)
 # Allow a few legitimate short names; drop other 1–2 char tokens.
 VALID_SHORT = {"x", "u2", "m", "bj", "om", "vv", "xx"}
 
+
 def clean_token(s: str) -> str:
     s = unicodedata.normalize("NFKC", (s or "")).strip()
     s = re.sub(r"\s+", " ", s)
     return s
+
 
 def split_artists(s: str) -> list[str]:
     s = clean_token(s)
@@ -25,6 +28,7 @@ def split_artists(s: str) -> list[str]:
     # drop junk tokens like lone "s"
     parts = [p for p in parts if len(p) > 2 or p.casefold() in VALID_SHORT]
     return parts
+
 
 print(f"[info] source: {SRC.resolve()}")
 if not SRC.exists():
@@ -46,4 +50,4 @@ print(f"[ok] example:\n{df.head(5)}")
 
 OUT.parent.mkdir(parents=True, exist_ok=True)
 df.to_csv(OUT, index=False)
-print(f"[ok] wrote bridge -> {OUT.resolve()} ({OUT.stat().st_size:,} bytes)") 
+print(f"[ok] wrote bridge -> {OUT.resolve()} ({OUT.stat().st_size:,} bytes)")

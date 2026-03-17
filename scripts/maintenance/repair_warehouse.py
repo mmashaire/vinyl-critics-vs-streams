@@ -19,17 +19,16 @@ and only act on remaining problems.
 from __future__ import annotations
 
 import argparse
+import json
 import shutil
 import sqlite3
+import subprocess
+import sys
 from contextlib import closing
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-import json
-import subprocess
-import sys
 from typing import Iterable, List, Optional, Tuple
-
 
 DB_PATH = Path("data/processed/vinyl_dw.sqlite")
 
@@ -48,22 +47,24 @@ def backup_db(db_path: Path) -> Path:
 
 
 def ensure_changelog(conn: sqlite3.Connection) -> None:
-    conn.execute(
-        """
+    conn.execute("""
         CREATE TABLE IF NOT EXISTS maintenance_changelog (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             ts TEXT NOT NULL,
             action TEXT NOT NULL,
             details TEXT NOT NULL
         )
-        """
-    )
+        """)
 
 
 def log_change(conn: sqlite3.Connection, rec: ChangeRecord) -> None:
     conn.execute(
         "INSERT INTO maintenance_changelog (ts, action, details) VALUES (?, ?, ?)",
-        (datetime.utcnow().isoformat() + "Z", rec.action, json.dumps(rec.details, ensure_ascii=False)),
+        (
+            datetime.utcnow().isoformat() + "Z",
+            rec.action,
+            json.dumps(rec.details, ensure_ascii=False),
+        ),
     )
 
 
@@ -132,7 +133,12 @@ def fill_blank_artists(conn: sqlite3.Connection, reviewids: Iterable[int]) -> Li
                 (artist, rid),
             )
             if cur.rowcount:
-                changes.append(ChangeRecord("fill_artist_from_bridge", {"reviewid": rid, "artist": artist, "rows_updated": cur.rowcount}))
+                changes.append(
+                    ChangeRecord(
+                        "fill_artist_from_bridge",
+                        {"reviewid": rid, "artist": artist, "rows_updated": cur.rowcount},
+                    )
+                )
     return changes
 
 
@@ -145,7 +151,9 @@ def deduplicate_reviewid(conn: sqlite3.Connection, reviewid: int) -> Optional[Ch
     cur.execute("DELETE FROM pitchfork_reviews WHERE reviewid = ? AND rowid != ?", (reviewid, keep))
     deleted = cur.rowcount
     if deleted:
-        return ChangeRecord("deduplicate_reviewid", {"reviewid": reviewid, "kept_rowid": keep, "deleted": deleted})
+        return ChangeRecord(
+            "deduplicate_reviewid", {"reviewid": reviewid, "kept_rowid": keep, "deleted": deleted}
+        )
     return None
 
 

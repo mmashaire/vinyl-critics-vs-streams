@@ -19,6 +19,13 @@ Quick highlights
 - Maintenance: `scripts/maintenance/repair_warehouse.py` is a safe, idempotent tool for common fixes.
 - Tests: `pytest tests/` enforces data contracts and smoke checks.
 
+Tech Stack
+- **Language**: Python 3.10+
+- **Data Processing**: Pandas, SQLite
+- **Modeling**: Scikit-learn
+- **Testing**: Pytest
+- **Linting**: Flake8, Black, Isort
+
 Why this project
 - Shows multi-source ingestion and entity resolution.
 - Demonstrates production-minded practices: backups, changelogs, and validation.
@@ -92,16 +99,6 @@ Contact
 Owner: mmashaire (GitHub)
 
 — end —
-<p align="left">
-  <a href="https://www.python.org/">
-    <img src="https://img.shields.io/badge/Python-3.10+-blue.svg" alt="Python 3.10+">
-  </a>
-  <a href="LICENSE">
-    <img src="https://img.shields.io/badge/License-MIT-green.svg" alt="MIT License">
-  </a>
-  <img src="https://img.shields.io/github/repo-size/mmashaire/vinyl-critics-vs-streams" alt="Repo Size">
-  <img src="https://img.shields.io/github/last-commit/mmashaire/vinyl-critics-vs-streams" alt="Last Commit">
-</p>
 
 # 🎵 Vinyl Critics vs Streams
 

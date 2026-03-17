@@ -1,35 +1,58 @@
-import pandas as pd
+#!/usr/bin/env python3
+"""
+Clean and standardize Spotify-YouTube data for downstream use.
+
+Loads raw CSV, normalizes column names, selects relevant columns,
+drops duplicates and missing essentials, and saves cleaned data.
+"""
+
+import logging
 from pathlib import Path
 
-SRC = Path(r"D:\Projects\vinyl-critics-vs-streams\data\raw\spotify_youtube\Spotify_Youtube.csv")
-OUT = Path(r"D:\Projects\vinyl-critics-vs-streams\data\interim\spotify_youtube_clean.csv")
-
-df = pd.read_csv(SRC, low_memory=False)
-
-df.columns = [c.strip().lower().replace(" ", "_") for c in df.columns]
-
-colmap = {
-    "artist": "artist",
-    "track": "song",
-    "danceability": "danceability",
-    "energy": "energy",
-    "loudness": "loudness",
-    "valence": "valence",
-    "views": "yt_views",
-    "likes": "yt_likes",
-    "comments": "yt_comments",
-}
-# streams column name differs by dataset versions → handle both
-if "stream" in df.columns:
-    colmap["stream"] = "streams"
-elif "streams" in df.columns:
-    colmap["streams"] = "streams"
-
-keep = [k for k in colmap.keys() if k in df.columns]
-clean = df[keep].rename(columns=colmap)
+import pandas as pd
 
 
-clean = clean.dropna(subset=["artist","song"]).drop_duplicates()
+def repo_root() -> Path:
+    """Get the repository root directory."""
+    return Path(__file__).resolve().parent.parent
 
-clean.to_csv(OUT, index=False)
-print(f"Saved {len(clean):,} rows -> {OUT}")
+
+def main() -> None:
+    logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
+
+    SRC = repo_root() / "data" / "raw" / "spotify_youtube" / "Spotify_Youtube.csv"
+    OUT = repo_root() / "data" / "interim" / "spotify_youtube_clean.csv"
+
+    df = pd.read_csv(SRC, low_memory=False)
+
+    df.columns = [c.strip().lower().replace(" ", "_") for c in df.columns]
+
+    colmap = {
+        "artist": "artist",
+        "track": "song",
+        "danceability": "danceability",
+        "energy": "energy",
+        "loudness": "loudness",
+        "valence": "valence",
+        "views": "yt_views",
+        "likes": "yt_likes",
+        "comments": "yt_comments",
+    }
+    # streams column name differs by dataset versions → handle both
+    if "stream" in df.columns:
+        colmap["stream"] = "streams"
+    elif "streams" in df.columns:
+        colmap["streams"] = "streams"
+
+    keep = [k for k in colmap.keys() if k in df.columns]
+    clean = df[keep].rename(columns=colmap)
+
+    clean = clean.dropna(subset=["artist", "song"]).drop_duplicates()
+
+    OUT.parent.mkdir(parents=True, exist_ok=True)
+    clean.to_csv(OUT, index=False)
+    logging.info(f"Saved {len(clean):,} rows -> {OUT}")
+
+
+if __name__ == "__main__":
+    main()

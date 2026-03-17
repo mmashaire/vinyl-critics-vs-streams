@@ -21,7 +21,6 @@ import time
 from pathlib import Path
 from typing import Iterable, List, Tuple
 
-
 PIPELINE: List[Tuple[str, str]] = [
     ("extract_pitchfork", "extract_pitchfork.py"),
     ("inspect_pitchfork", "inspect_pitchfork.py"),
@@ -149,8 +148,13 @@ def main() -> int:
     run_offline_match = bool(args.run_offline_match)
     run_manifest_check = bool(args.old_manifest and args.new_manifest)
 
-    if (args.old_manifest and not args.new_manifest) or (args.new_manifest and not args.old_manifest):
-        print("Error: verify_manifest.py needs both --old-manifest and --new-manifest.", file=sys.stderr)
+    if (args.old_manifest and not args.new_manifest) or (
+        args.new_manifest and not args.old_manifest
+    ):
+        print(
+            "Error: verify_manifest.py needs both --old-manifest and --new-manifest.",
+            file=sys.stderr,
+        )
         return 2
 
     # Check that required scripts exist.
@@ -166,13 +170,19 @@ def main() -> int:
     if run_offline_match:
         p = scripts_dir() / "match_artists_offline.py"
         if not p.exists():
-            print("Error: --run-offline-match was set but match_artists_offline.py is missing.", file=sys.stderr)
+            print(
+                "Error: --run-offline-match was set but match_artists_offline.py is missing.",
+                file=sys.stderr,
+            )
             return 2
 
     if run_manifest_check:
         p = scripts_dir() / "verify_manifest.py"
         if not p.exists():
-            print("Error: manifest check requested but verify_manifest.py is missing.", file=sys.stderr)
+            print(
+                "Error: manifest check requested but verify_manifest.py is missing.",
+                file=sys.stderr,
+            )
             return 2
 
     print("Vinyl Critics vs Streams — pipeline run")
@@ -213,10 +223,15 @@ def main() -> int:
             step_no += 1
             off_started = time.time()
             print(f"\n=== [{step_no}/{total_steps}] match_artists_offline ===")
-            code2 = run_script(scripts_dir() / "match_artists_offline.py", passthrough, args.dry_run)
+            code2 = run_script(
+                scripts_dir() / "match_artists_offline.py", passthrough, args.dry_run
+            )
             if code2 != 0:
                 took2 = time.time() - off_started
-                print(f"\nFailed at step 'match_artists_offline' (exit {code2}) after {took2:.1f}s.", file=sys.stderr)
+                print(
+                    f"\nFailed at step 'match_artists_offline' (exit {code2}) after {took2:.1f}s.",
+                    file=sys.stderr,
+                )
                 return code2
             took2 = time.time() - off_started
             print(f"Done: match_artists_offline ({took2:.1f}s)")
@@ -230,7 +245,10 @@ def main() -> int:
         code = run_script(scripts_dir() / "verify_manifest.py", man_args, args.dry_run)
         if code != 0:
             took = time.time() - man_started
-            print(f"\nFailed at step 'verify_manifest' (exit {code}) after {took:.1f}s.", file=sys.stderr)
+            print(
+                f"\nFailed at step 'verify_manifest' (exit {code}) after {took:.1f}s.",
+                file=sys.stderr,
+            )
             return code
         took = time.time() - man_started
         print(f"Done: verify_manifest ({took:.1f}s)")

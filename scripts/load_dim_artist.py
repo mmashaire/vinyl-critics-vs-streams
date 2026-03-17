@@ -1,10 +1,12 @@
 # scripts/load_dim_artist.py
-from pathlib import Path
 import sqlite3
+from pathlib import Path
+
 import pandas as pd
 
 DB = Path("data/processed/vinyl_dw.sqlite")
 MAP = Path("data/processed/artist_map.csv")
+
 
 def main():
     if not DB.exists():
@@ -16,8 +18,13 @@ def main():
 
     # Keep only columns we intend to publish into the dim table
     keep = [
-        "artist", "artist_norm", "n_reviews",
-        "artist_spotify", "match_type", "score", "spotify_artist_id"
+        "artist",
+        "artist_norm",
+        "n_reviews",
+        "artist_spotify",
+        "match_type",
+        "score",
+        "spotify_artist_id",
     ]
     df = df[[c for c in keep if c in df.columns]].copy()
 
@@ -107,10 +114,14 @@ def main():
             WHERE da.match_type = 'jaccard_token'
         """).fetchone()[0]
 
-        print(f"[ok] dim_artist loaded: {cur.execute('SELECT COUNT(*) FROM dim_artist').fetchone()[0]:,} rows")
+        print(
+            f"[ok] dim_artist loaded: {cur.execute('SELECT COUNT(*) FROM dim_artist').fetchone()[0]:,} rows"
+        )
         if total_artists:
             pct = mapped_artists / total_artists
-            print(f"[coverage] pitchfork artists mapped: {mapped_artists:,}/{total_artists:,} ({pct:.1%})")
+            print(
+                f"[coverage] pitchfork artists mapped: {mapped_artists:,}/{total_artists:,} ({pct:.1%})"
+            )
         print(f"[coverage] exact_norm: {exact_mapped:,} | jaccard_token: {fuzzy_mapped:,}")
 
         # Quick sanity: uniqueness and nulls
@@ -131,6 +142,7 @@ def main():
         con.commit()
     finally:
         con.close()
+
 
 if __name__ == "__main__":
     main()
