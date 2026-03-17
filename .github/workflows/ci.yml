@@ -25,7 +25,11 @@ jobs:
 
       - name: Run ETL pipeline
         run: |
-          python scripts/run_pipeline.py
+          if [ -f "data/raw/pitchfork/database.sqlite" ]; then
+            python scripts/run_pipeline.py
+          else
+            echo "Raw data not available in CI, skipping pipeline. Run locally to build warehouse."
+          fi
 
       - name: Run unit tests
         run: |

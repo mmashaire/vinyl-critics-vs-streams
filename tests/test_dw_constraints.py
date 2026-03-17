@@ -1,13 +1,15 @@
 from __future__ import annotations
 
 import sqlite3
+import pytest
 from pathlib import Path
 
 DB_PATH = Path("data/processed/vinyl_dw.sqlite")
 
 
 def _connect() -> sqlite3.Connection:
-    assert DB_PATH.exists(), f"Warehouse DB not found: {DB_PATH} (run scripts/run_pipeline.py)"
+    if not DB_PATH.exists():
+        pytest.skip(f"Warehouse DB not found: {DB_PATH} (run scripts/run_pipeline.py)")
     return sqlite3.connect(DB_PATH)
 
 
