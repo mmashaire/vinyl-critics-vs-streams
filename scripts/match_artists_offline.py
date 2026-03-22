@@ -67,7 +67,7 @@ def load_spotify_candidates() -> pd.DataFrame:
                 if not wanted:
                     continue
                 df = pd.read_csv(p, usecols=wanted)
-            except Exception:
+            except (pd.errors.ParserError, OSError, ValueError):
                 continue
 
             for c in df.columns:
@@ -84,7 +84,7 @@ def load_spotify_candidates() -> pd.DataFrame:
                                 if w and not looks_like_label(w):
                                     names.add(w)
                             continue
-                    except Exception:
+                    except (json.JSONDecodeError, ValueError):
                         pass
                     # Delimited
                     if ";" in v:

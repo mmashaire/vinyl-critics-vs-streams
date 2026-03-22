@@ -7,14 +7,7 @@ from rapidfuzz import fuzz, process
 OUT_MAP = Path("data/overrides/artist_map.csv")
 OUT_REVIEW = Path("data/overrides/artist_review_queue.csv")
 BLOCKLIST = {"various artists", "soundtrack", "original soundtrack", "va", "ost"}
-
-pitchfork = pd.read_csv("data/interim/pitchfork_artists.csv", dtype=str)
-spotify = pd.read_csv("data/interim/spotify_youtube_clean.csv", dtype=str)
-
-pf_names = pitchfork["artist"].fillna("").str.strip().str.replace(r"\s+", " ", regex=True)
-sp_names = spotify["artist"].fillna("").str.strip().str.replace(r"\s+", " ", regex=True)
-pf_names = pf_names[pf_names.ne("")].drop_duplicates().tolist()
-sp_names = pd.Series(sp_names[sp_names.ne("")].drop_duplicates().tolist()).tolist()
+CUTOFF = 93
 
 
 def clean(name: str) -> str:
@@ -44,32 +37,44 @@ def ok_pair(a_raw: str, b_raw: str, score: int) -> bool:
     return True
 
 
-pf_clean = [clean(x) for x in pf_names]
-sp_clean = [clean(x) for x in sp_names]
+def main() -> None:
+    pitchfork = pd.read_csv("data/interim/pitchfork_artists.csv", dtype=str)
+    spotify = pd.read_csv("data/interim/spotify_youtube_clean.csv", dtype=str)
 
-CUTOFF = 93
-rows, review = [], []
+    pf_names = pitchfork["artist"].fillna("").str.strip().str.replace(r"\s+", " ", regex=True)
+    sp_names = spotify["artist"].fillna("").str.strip().str.replace(r"\s+", " ", regex=True)
+    pf_names = pf_names[pf_names.ne("")].drop_duplicates().tolist()
+    sp_names = pd.Series(sp_names[sp_names.ne("")].drop_duplicates().tolist()).tolist()
 
-for i, p in enumerate(pf_clean):
-    res = process.extractOne(p, sp_clean, scorer=fuzz.WRatio, score_cutoff=CUTOFF)
-    if res is None:
-        continue
-    match_clean, score, j = res
-    a_raw = pf_names[i]
-    b_raw = sp_names[j]
-    if ok_pair(a_raw, b_raw, int(score)):
-        rows.append((a_raw, b_raw, int(score)))
-    else:
-        review.append((a_raw, b_raw, int(score), pf_clean[i], sp_clean[j]))
+    pf_clean = [clean(x) for x in pf_names]
+    sp_clean = [clean(x) for x in sp_names]
 
-df = pd.DataFrame(rows, columns=["pitchfork_artist", "spotify_artist", "score"]).drop_duplicates()
-df_review = pd.DataFrame(
-    review, columns=["pf_artist", "sp_artist", "score", "pf_clean", "sp_clean"]
-).drop_duplicates()
+    rows, review = [], []
 
-OUT_MAP.parent.mkdir(parents=True, exist_ok=True)
-df.to_csv(OUT_MAP, index=False, encoding="utf-8")
-df_review.to_csv(OUT_REVIEW, index=False, encoding="utf-8")
+    for i, p in enumerate(pf_clean):
+        res = process.extractOne(p, sp_clean, scorer=fuzz.WRatio, score_cutoff=CUTOFF)
+        if res is None:
+            continue
+        match_clean, score, j = res
+        a_raw = pf_names[i]
+        b_raw = sp_names[j]
+        if ok_pair(a_raw, b_raw, int(score)):
+            rows.append((a_raw, b_raw, int(score)))
+        else:
+            review.append((a_raw, b_raw, int(score), pf_clean[i], sp_clean[j]))
 
-print(f"[ok] saved {len(df):,} high-confidence matches (≥{CUTOFF}) → {OUT_MAP}")
-print(f"[review] queued {len(df_review):,} borderline pairs → {OUT_REVIEW}")
+    df = pd.DataFrame(rows, columns=["pitchfork_artist", "spotify_artist", "score"]).drop_duplicates()
+    df_review = pd.DataFrame(
+        review, columns=["pf_artist", "sp_artist", "score", "pf_clean", "sp_clean"]
+    ).drop_duplicates()
+
+    OUT_MAP.parent.mkdir(parents=True, exist_ok=True)
+    df.to_csv(OUT_MAP, index=False, encoding="utf-8")
+    df_review.to_csv(OUT_REVIEW, index=False, encoding="utf-8")
+
+    print(f"[ok] saved {len(df):,} high-confidence matches (≥{CUTOFF}) → {OUT_MAP}")
+    print(f"[review] queued {len(df_review):,} borderline pairs → {OUT_REVIEW}")
+
+
+if __name__ == "__main__":
+    main()

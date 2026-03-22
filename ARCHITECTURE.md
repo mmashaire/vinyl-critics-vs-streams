@@ -77,7 +77,7 @@ graph TD
 
 ### Data Warehouse Schema
 - **Core Tables**: `pitchfork_reviews`, `pitchfork_review_artists`, `dim_artist`, `spotify_youtube_clean`
-- **Views**: 5 semantic views for analysis (defined in `sql/dw/create_views.sql`)
+- **Views**: 6 semantic views for analysis (defined in `sql/dw/create_views.sql`): `vw_review_with_artist`, `vw_unmatched_artists`, `vw_artist_summary`, `vw_artist_streams`, `vw_artist_critics_vs_streams`, `vw_artist_coverage_by_year`
 
 ### Modeling Pipeline
 - **Feature Engineering** (`models/build_features.py`): Creates 14-feature dataset
@@ -86,7 +86,7 @@ graph TD
 ### Outputs
 - **Reports**: Metrics, feature importance, predictions, model card
 - **Notebook**: Exploratory analysis with visualizations
-- **Dashboard**: Power BI file for interactive exploration
+- **Dashboard**: Streamlit app (`dashboard.py`) for interactive exploration
 
 ## Key Design Decisions
 

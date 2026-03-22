@@ -40,10 +40,6 @@ def _list_objects(con: sqlite3.Connection, obj_type: str) -> set[str]:
     return {r[0] for r in rows}
 
 
-def test_dw_file_exists() -> None:
-    pytest.skip("Warehouse DB not built in CI - run pipeline locally")
-
-
 def test_required_tables_exist() -> None:
     con = _connect()
     try:
