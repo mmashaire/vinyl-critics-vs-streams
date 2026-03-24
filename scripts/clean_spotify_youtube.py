@@ -17,17 +17,17 @@ def repo_root() -> Path:
     return Path(__file__).resolve().parent.parent
 
 
-def main() -> None:
-    logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
+def clean_df(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Apply column normalization, selection, renaming, and deduplication.
 
-    SRC = repo_root() / "data" / "raw" / "spotify_youtube" / "Spotify_Youtube.csv"
-    OUT = repo_root() / "data" / "interim" / "spotify_youtube_clean.csv"
-
-    df = pd.read_csv(SRC, low_memory=False)
-
+    Accepts a raw Spotify-YouTube DataFrame and returns a cleaned copy.
+    Handles both 'stream' and 'streams' column variants.
+    """
+    df = df.copy()
     df.columns = [c.strip().lower().replace(" ", "_") for c in df.columns]
 
-    colmap = {
+    colmap: dict[str, str] = {
         "artist": "artist",
         "track": "song",
         "danceability": "danceability",
@@ -44,10 +44,19 @@ def main() -> None:
     elif "streams" in df.columns:
         colmap["streams"] = "streams"
 
-    keep = [k for k in colmap.keys() if k in df.columns]
+    keep = [k for k in colmap if k in df.columns]
     clean = df[keep].rename(columns=colmap)
+    return clean.dropna(subset=["artist", "song"]).drop_duplicates()
 
-    clean = clean.dropna(subset=["artist", "song"]).drop_duplicates()
+
+def main() -> None:
+    logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
+
+    SRC = repo_root() / "data" / "raw" / "spotify_youtube" / "Spotify_Youtube.csv"
+    OUT = repo_root() / "data" / "interim" / "spotify_youtube_clean.csv"
+
+    df = pd.read_csv(SRC, low_memory=False)
+    clean = clean_df(df)
 
     OUT.parent.mkdir(parents=True, exist_ok=True)
     clean.to_csv(OUT, index=False)

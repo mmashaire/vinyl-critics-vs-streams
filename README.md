@@ -54,7 +54,7 @@ The broad takeaway is straightforward: critic scores and streaming success are r
 | `notebooks/01_critics_vs_streams.ipynb` | Exploratory analysis and visual inspection |
 | `dashboard.py` | Streamlit dashboard for quick, interactive exploration |
 | `reports/` | Metrics, predictions, model card, feature importance, Power BI file |
-| `tests/` | Smoke tests and warehouse constraint checks |
+| `tests/` | Unit tests, smoke tests, and warehouse constraint checks |
 
 ## Data flow
 
