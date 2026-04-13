@@ -65,7 +65,9 @@ def _columns(con: sqlite3.Connection, table: str) -> set[str]:
 
 def _primary_key_column(con: sqlite3.Connection, table: str) -> Optional[str]:
     rows = con.execute(f"PRAGMA table_info({table})").fetchall()
-    pk_cols = [str(r[1]) for r in rows if int(r[5]) == 1]
+    # PRAGMA table_info.pk is 1-based column order within the primary key.
+    # Accept only a true single-column primary key; composite keys return None.
+    pk_cols = [str(r[1]) for r in rows if int(r[5]) > 0]
     return pk_cols[0] if len(pk_cols) == 1 else None
 
 

@@ -27,6 +27,13 @@ def clean_df(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
     df.columns = [c.strip().lower().replace(" ", "_") for c in df.columns]
 
+    required_columns = {"artist", "track"}
+    missing_required = sorted(required_columns - set(df.columns))
+    if missing_required:
+        raise ValueError(
+            "Missing required Spotify/YouTube columns: " + ", ".join(missing_required)
+        )
+
     colmap: dict[str, str] = {
         "artist": "artist",
         "track": "song",
@@ -46,7 +53,14 @@ def clean_df(df: pd.DataFrame) -> pd.DataFrame:
 
     keep = [k for k in colmap if k in df.columns]
     clean = df[keep].rename(columns=colmap)
-    return clean.dropna(subset=["artist", "song"]).drop_duplicates()
+    clean = clean.dropna(subset=["artist", "song"]).copy()
+
+    # Trim essential text fields and reject whitespace-only values.
+    clean["artist"] = clean["artist"].astype(str).str.strip()
+    clean["song"] = clean["song"].astype(str).str.strip()
+    clean = clean[(clean["artist"] != "") & (clean["song"] != "")]
+
+    return clean.drop_duplicates()
 
 
 def main() -> None:

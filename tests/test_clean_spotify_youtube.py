@@ -55,6 +55,22 @@ def test_drops_row_with_null_track() -> None:
     assert len(result) == 1
 
 
+def test_drops_row_with_whitespace_only_artist_or_track() -> None:
+    rows = [
+        _base_row(),
+        _base_row(Artist="   "),
+        _base_row(Track="\t  "),
+    ]
+    result = clean_df(_df(*rows))
+    assert len(result) == 1
+
+
+def test_trims_artist_and_song_values() -> None:
+    result = clean_df(_df(_base_row(Artist="  Portishead  ", Track="  Roads  ")))
+    assert result["artist"].iloc[0] == "Portishead"
+    assert result["song"].iloc[0] == "Roads"
+
+
 def test_drops_duplicate_rows() -> None:
     rows = [_base_row(), _base_row()]  # exact duplicate
     result = clean_df(_df(*rows))
@@ -86,6 +102,20 @@ def test_optional_columns_absent_do_not_raise() -> None:
     result = clean_df(_df(row))
     assert result["artist"].iloc[0] == "Björk"
     assert "yt_views" not in result.columns
+
+
+def test_missing_artist_column_raises_value_error() -> None:
+    row = _base_row()
+    row.pop("Artist")
+    with pytest.raises(ValueError, match="Missing required Spotify/YouTube columns"):
+        clean_df(_df(row))
+
+
+def test_missing_track_column_raises_value_error() -> None:
+    row = _base_row()
+    row.pop("Track")
+    with pytest.raises(ValueError, match="Missing required Spotify/YouTube columns"):
+        clean_df(_df(row))
 
 
 def test_returns_copy_not_mutating_input() -> None:

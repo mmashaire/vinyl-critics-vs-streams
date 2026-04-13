@@ -81,6 +81,15 @@ This is not a story where the model discovers a hidden law of music.
 
 That is why this repo leans as hard on validation, matching, and reproducibility as it does on modeling.
 
+## Recent quality hardening
+
+Recent updates focused on safety and trustworthiness over adding more features:
+
+- Warehouse validation now handles primary-key checks more safely for evolving schemas.
+- Spotify/YouTube cleaning now trims essential text fields and drops whitespace-only artist/track values.
+- Cleaner input now fails fast when required columns are missing, so bad exports do not silently flow downstream.
+- Added focused validator and cleaner regression tests to lock these behaviors in.
+
 ## Run it locally
 
 ### 1. Set up a virtual environment
