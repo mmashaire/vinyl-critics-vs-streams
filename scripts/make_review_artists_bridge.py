@@ -15,9 +15,9 @@ VALID_SHORT = {"x", "u2", "m", "bj", "om", "vv", "xx"}
 
 
 def clean_token(s: str) -> str:
-    s = unicodedata.normalize("NFKC", (s or "")).strip()
-    s = re.sub(r"\s+", " ", s)
-    return s
+    text = str(s or "")
+    text = unicodedata.normalize("NFKC", text).strip()
+    return re.sub(r"\s+", " ", text)
 
 
 def split_artists(s: str) -> list[str]:
@@ -30,24 +30,29 @@ def split_artists(s: str) -> list[str]:
     return parts
 
 
-print(f"[info] source: {SRC.resolve()}")
-if not SRC.exists():
-    raise FileNotFoundError(f"Missing {SRC}. Run stage_reviews.py first.")
+def main() -> None:
+    print(f"[info] source: {SRC.resolve()}")
+    if not SRC.exists():
+        raise FileNotFoundError(f"Missing {SRC}. Run stage_reviews.py first.")
 
-df = pd.read_csv(SRC, dtype={"reviewid": "int64", "artist": "string"})
-df = df[["reviewid", "artist"]].copy()
+    df = pd.read_csv(SRC, dtype={"reviewid": "int64", "artist": "string"})
+    df = df[["reviewid", "artist"]].copy()
 
-df["artist"] = df["artist"].fillna("").map(split_artists)
-df = df.explode("artist").dropna(subset=["artist"])
-df["artist"] = df["artist"].astype(str).str.strip()
-df = df[df["artist"] != ""]
+    df["artist"] = df["artist"].fillna("").map(split_artists)
+    df = df.explode("artist").dropna(subset=["artist"])
+    df["artist"] = df["artist"].astype(str).str.strip()
+    df = df[df["artist"] != ""]
 
-before = len(df)
-df = df.drop_duplicates(["reviewid", "artist"]).reset_index(drop=True)
+    before = len(df)
+    df = df.drop_duplicates(["reviewid", "artist"]).reset_index(drop=True)
 
-print(f"[ok] exploded pairs: {before:,} -> after de-dup: {len(df):,}")
-print(f"[ok] example:\n{df.head(5)}")
+    print(f"[ok] exploded pairs: {before:,} -> after de-dup: {len(df):,}")
+    print(f"[ok] example:\n{df.head(5)}")
 
-OUT.parent.mkdir(parents=True, exist_ok=True)
-df.to_csv(OUT, index=False)
-print(f"[ok] wrote bridge -> {OUT.resolve()} ({OUT.stat().st_size:,} bytes)")
+    OUT.parent.mkdir(parents=True, exist_ok=True)
+    df.to_csv(OUT, index=False)
+    print(f"[ok] wrote bridge -> {OUT.resolve()} ({OUT.stat().st_size:,} bytes)")
+
+
+if __name__ == "__main__":
+    main()
