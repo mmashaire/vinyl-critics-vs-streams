@@ -56,6 +56,10 @@ The broad takeaway is straightforward: critic scores and streaming success are r
 | `reports/` | Metrics, predictions, model card, feature importance, Power BI file |
 | `tests/` | Unit tests, smoke tests, and warehouse constraint checks |
 
+## Architecture
+
+For a visual overview of the data pipeline flow, see [ARCHITECTURE.md](ARCHITECTURE.md).
+
 ## Data flow
 
 The project is organized around a clear sequence rather than one large script.
