@@ -94,6 +94,11 @@ Recent updates focused on safety and trustworthiness over adding more features:
 - Cleaner input now fails fast when required columns are missing, so bad exports do not silently flow downstream.
 - Added focused validator and cleaner regression tests to lock these behaviors in.
 
+## Documentation
+
+- [Data Contract](docs/data_contract.md): Formal definition of input and output schemas for each pipeline stage.
+- [Data Dictionary](docs/data_dictionary.md): Descriptions of all tables, views, and columns in the warehouse.
+
 ## Run it locally
 
 ### 1. Set up a virtual environment
