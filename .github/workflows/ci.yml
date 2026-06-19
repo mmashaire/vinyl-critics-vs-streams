@@ -23,6 +23,11 @@ jobs:
           pip install -r requirements.txt
           pip install -r requirements-dev.txt
 
+      - name: Validate pipeline CLI
+        run: |
+          python scripts/run_pipeline.py --list
+          python scripts/run_pipeline.py --dry-run
+
       - name: Run ETL pipeline
         run: |
           if [ -f "data/raw/pitchfork/database.sqlite" ]; then

@@ -139,6 +139,13 @@ python scripts/run_pipeline.py
 
 This runs the ETL in order and stops on the first failing step.
 
+If you want to confirm the pipeline wiring without executing every stage, you can also run:
+
+```bash
+python scripts/run_pipeline.py --list
+python scripts/run_pipeline.py --dry-run
+```
+
 Note: the repo includes processed outputs for exploration, but a full rebuild still depends on the raw source files being present under `data/raw/`.
 
 ### 4. Rebuild the modeling outputs
@@ -154,9 +161,19 @@ This updates the feature set, metrics, feature importance report, and top-50 pre
 
 ```bash
 pytest -q
+python scripts/run_pipeline.py --list
+python scripts/run_pipeline.py --dry-run
 ```
 
-There is also a GitHub Actions workflow in `.github/workflows/ci.yml` that installs dependencies and runs tests automatically.
+The first command checks the test suite. The next two verify that the pipeline entry point is wired correctly without needing to execute the full ETL.
+
+There is also a GitHub Actions workflow in `.github/workflows/ci.yml` that installs dependencies, verifies the pipeline CLI, and runs tests automatically.
+
+## Contributing
+
+For a quick contributor workflow, see [CONTRIBUTING.md](CONTRIBUTING.md).
+
+The main expectation is simple: keep changes small, explain assumptions clearly, and verify behavior with the relevant tests or pipeline checks before opening a PR.
 
 ## Warehouse shape
 
