@@ -1,7 +1,22 @@
 [
   {
-    "n_rows": 282,
+    "n_train_rows": 225,
+    "n_test_rows": 57,
     "n_features": 14,
+    "seed": 42,
+    "test_size": 0.2,
+    "target_transform": "log1p(total_streams)",
+    "model": "mean_baseline",
+    "rmse": 0.9687024099212596,
+    "mae": 0.7778449001838355,
+    "r2": -2.0257303661175285e-06
+  },
+  {
+    "n_train_rows": 225,
+    "n_test_rows": 57,
+    "n_features": 14,
+    "seed": 42,
+    "test_size": 0.2,
     "target_transform": "log1p(total_streams)",
     "model": "linear_regression",
     "rmse": 0.7977556572298078,
@@ -9,12 +24,15 @@
     "r2": 0.3217966905028621
   },
   {
-    "n_rows": 282,
+    "n_train_rows": 225,
+    "n_test_rows": 57,
     "n_features": 14,
+    "seed": 42,
+    "test_size": 0.2,
     "target_transform": "log1p(total_streams)",
     "model": "random_forest",
-    "rmse": 0.6428668826570446,
-    "mae": 0.42254369293945265,
-    "r2": 0.5595848736730207
+    "rmse": 0.6428668826570445,
+    "mae": 0.4225436929394526,
+    "r2": 0.559584873673021
   }
 ]

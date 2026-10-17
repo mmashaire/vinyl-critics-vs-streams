@@ -19,6 +19,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 from sklearn.compose import ColumnTransformer
+from sklearn.dummy import DummyRegressor
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.impute import SimpleImputer
 from sklearn.linear_model import LinearRegression
@@ -34,8 +35,11 @@ TARGET = "total_streams"
 
 @dataclass
 class Metrics:
-    n_rows: int
+    n_train_rows: int
+    n_test_rows: int
     n_features: int
+    seed: int
+    test_size: float
     target_transform: str
     model: str
     rmse: float
@@ -51,12 +55,18 @@ def _evaluate(
     y_true: np.ndarray,
     y_pred: np.ndarray,
     model_name: str,
-    n_rows: int,
+    n_train_rows: int,
+    n_test_rows: int,
     n_features: int,
+    seed: int,
+    test_size: float,
 ) -> Metrics:
     return Metrics(
-        n_rows=n_rows,
+        n_train_rows=n_train_rows,
+        n_test_rows=n_test_rows,
         n_features=n_features,
+        seed=seed,
+        test_size=test_size,
         target_transform="log1p(total_streams)",
         model=model_name,
         rmse=_rmse(y_true, y_pred),
@@ -109,6 +119,7 @@ def main() -> int:
     )
 
     models = [
+        ("mean_baseline", DummyRegressor(strategy="mean")),
         ("linear_regression", LinearRegression()),
         (
             "random_forest",
@@ -131,7 +142,16 @@ def main() -> int:
         pipe.fit(X_train, y_train)
         preds = pipe.predict(X_test)
 
-        m = _evaluate(y_test, preds, name, n_rows=len(df), n_features=len(feature_cols))
+        m = _evaluate(
+            y_test,
+            preds,
+            name,
+            n_train_rows=len(y_train),
+            n_test_rows=len(y_test),
+            n_features=len(feature_cols),
+            seed=args.seed,
+            test_size=args.test_size,
+        )
         all_metrics.append(m)
 
         model = pipe.named_steps["model"]
@@ -144,15 +164,15 @@ def main() -> int:
 
         print(f"[ok] {name}: RMSE={m.rmse:.4f}  MAE={m.mae:.4f}  R2={m.r2:.4f}")
 
-        # Save a small prediction sample for sanity-checking
-        pred_df = pd.DataFrame(
-            {
-                "artist": artist_test.to_numpy(),
-                "y_true_log1p": y_test,
-                "y_pred_log1p": preds,
-            }
-        ).sort_values("y_true_log1p", ascending=False).head(50)
-        pred_df.to_csv(REPORTS_DIR / f"predictions_top50_{name}.csv", index=False)
+        if name != "mean_baseline":
+            pred_df = pd.DataFrame(
+                {
+                    "artist": artist_test.to_numpy(),
+                    "y_true_log1p": y_test,
+                    "y_pred_log1p": preds,
+                }
+            ).sort_values("y_true_log1p", ascending=False).head(50)
+            pred_df.to_csv(REPORTS_DIR / f"predictions_top50_{name}.csv", index=False)
 
     # Write metrics JSON
     (REPORTS_DIR / "metrics.json").write_text(

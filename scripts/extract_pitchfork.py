@@ -18,17 +18,20 @@ RAW_DB = repo_root() / "data" / "raw" / "pitchfork" / "database.sqlite"
 OUTDIR = repo_root() / "data" / "interim"
 
 # Expected tables for downstream joins. Keep tight to avoid drifting schemas.
-TABLES = ["artists", "reviews", "genres", "labels", "years", "content"]
+TABLES = ["artists", "reviews", "genres", "labels", "years"]
 
 # Where we store a machine-readable snapshot of the export.
 MANIFEST = OUTDIR / "pitchfork_export_meta.json"
 
-print(f"[info] using db: {RAW_DB}")
-print(f"[info] writing to: {OUTDIR.resolve()}")
+print(f"[info] using db: {RAW_DB.relative_to(repo_root()).as_posix()}")
+print(f"[info] writing to: {OUTDIR.relative_to(repo_root()).as_posix()}")
 
 # Fail fast if the dump is missing. Early exit beats partial, silent failures.
 if not RAW_DB.exists():
-    print(f"[error] database not found at: {RAW_DB}", file=sys.stderr)
+    print(
+        f"[error] database not found at: {RAW_DB.relative_to(repo_root()).as_posix()}",
+        file=sys.stderr,
+    )
     sys.exit(1)
 
 # Idempotent: safe to run repeatedly in local dev or CI.
@@ -46,7 +49,7 @@ def sha256_file(path: Path, chunk_size: int = 1024 * 1024) -> str:
 
 con = sqlite3.connect(str(RAW_DB))
 manifest = {
-    "source_db": str(RAW_DB),
+    "source_db": RAW_DB.relative_to(repo_root()).as_posix(),
     "source_db_mtime": datetime.fromtimestamp(RAW_DB.stat().st_mtime, tz=timezone.utc).isoformat(),
     "exported_at": datetime.now(tz=timezone.utc).isoformat(),
     "tables": {},
@@ -86,7 +89,7 @@ try:
         file_hash = sha256_file(out)
 
         manifest["tables"][t] = {
-            "csv_path": str(out),
+            "csv_path": out.relative_to(repo_root()).as_posix(),
             "rows": int(len(df)),
             "bytes": int(bytes_out),
             "sha256": file_hash,
@@ -95,7 +98,10 @@ try:
         manifest["totals"]["rows_exported"] += int(len(df))
         manifest["totals"]["bytes_exported"] += int(bytes_out)
 
-        print(f"[ok] {t}: {len(df):,} rows -> {out} ({bytes_out:,} bytes)")
+        print(
+            f"[ok] {t}: {len(df):,} rows -> "
+            f"{out.relative_to(repo_root()).as_posix()} ({bytes_out:,} bytes)"
+        )
 
 finally:
     # Always close the handle; avoids locked files on Windows and flaky reruns.
@@ -105,4 +111,4 @@ finally:
 # Write manifest last so a partial export won’t leave a misleading manifest.
 with MANIFEST.open("w", encoding="utf-8") as f:
     json.dump(manifest, f, indent=2, ensure_ascii=False)
-print(f"[ok] wrote manifest -> {MANIFEST}")
+print(f"[ok] wrote manifest -> {MANIFEST.relative_to(repo_root()).as_posix()}")

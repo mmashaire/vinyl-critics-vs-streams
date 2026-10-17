@@ -33,7 +33,10 @@ Examples:
 - Random Forest Regressor (non-linear baseline)
 
 ## Evaluation
-Train/test split with fixed random seed.
+An 80/20 train/test split uses a fixed random seed. The metrics report records the
+training and test row counts, seed, and test fraction for each model. A mean
+prediction baseline is evaluated on the same holdout to show whether the trained
+models improve over predicting the training-set average.
 
 Metrics reported:
 - RMSE
